@@ -5,7 +5,7 @@
  */
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:5000';
-const USE_MOCK = process.env.NEXT_PUBLIC_USE_MOCK !== '0'; // default ON until backend is wired up
+const USE_MOCK = process.env.NEXT_PUBLIC_USE_MOCK === '1'; // Use mock only when explicitly set to '1', otherwise use real API
 const TOKEN_KEY = 'sipsave-admin-access-token';
 const REFRESH_KEY = 'sipsave-admin-refresh-token';
 const ADMIN_KEY = 'sipsave-admin-profile';
@@ -31,18 +31,30 @@ async function request<T>(path: string, init: RequestInit = {}, anon = false): P
     const token = window.sessionStorage.getItem(TOKEN_KEY);
     if (token) headers.set('Authorization', `Bearer ${token}`);
   }
-  const res = await fetch(`${BASE_URL}${path}`, { ...init, headers });
-  if (res.status === 204) return undefined as unknown as T;
-  const text = await res.text();
-  const body = text ? safeParse(text) : null;
-  if (!res.ok) {
-    const title =
-      body && typeof body === 'object' && 'title' in (body as Record<string, unknown>)
-        ? String((body as Record<string, unknown>).title)
-        : res.statusText;
-    throw new ApiError(res.status, title, body);
+  
+  const url = `${BASE_URL}${path}`;
+  console.log(`📡 API Request: ${init.method || 'GET'} ${url}`);
+  
+  try {
+    const res = await fetch(url, { ...init, headers });
+    if (res.status === 204) return undefined as unknown as T;
+    const text = await res.text();
+    const body = text ? safeParse(text) : null;
+    if (!res.ok) {
+      const title =
+        body && typeof body === 'object' && 'title' in (body as Record<string, unknown>)
+          ? String((body as Record<string, unknown>).title)
+          : res.statusText;
+      console.error(`❌ API Error [${res.status}]: ${title}`, body);
+      throw new ApiError(res.status, title, body);
+    }
+    console.log(`✅ API Success [${res.status}]`);
+    return body as T;
+  } catch (err) {
+    if (err instanceof ApiError) throw err;
+    console.error(`🔥 Network Error: ${err}`);
+    throw new ApiError(0, 'Network error - is the API running at ' + BASE_URL + '?', err);
   }
-  return body as T;
 }
 
 function safeParse(s: string): unknown {
@@ -72,6 +84,7 @@ export function saveSession(s: AdminSession) {
   window.sessionStorage.setItem(TOKEN_KEY, s.accessToken);
   window.sessionStorage.setItem(REFRESH_KEY, s.refreshToken);
   window.sessionStorage.setItem(ADMIN_KEY, JSON.stringify(s.admin));
+  window.localStorage.setItem('session', JSON.stringify(s));
 }
 
 export function loadAdmin(): AdminProfile | null {
@@ -307,6 +320,11 @@ export const listSubscriptions = (status?: string, skip = 0, take = 50) => {
   if (status) q.set('status', status);
   return request<AdminSubscriptionRowDto[]>(`/api/admin/subscriptions?${q.toString()}`);
 };
+
+
+
+export const getSubscription = (id: number) =>
+  request<AdminSubscriptionRowDto>(`/api/admin/subscriptions/${id}`);
 
 // ---- Analytics ----
 
