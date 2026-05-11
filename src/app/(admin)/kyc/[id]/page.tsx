@@ -14,6 +14,7 @@ import {
   ApiError,
   approveKyc,
   getKycDetail,
+  listKycQueue,
   rejectKyc,
   resubmitKyc,
   type KycReviewDetailDto,
@@ -80,6 +81,44 @@ export default function KycReviewPage() {
       setBusy(false);
     }
   }
+
+async function approveAndSyncBar(approveFn: () => Promise<KycReviewDetailDto>) {
+  setBusy(true);
+  try {
+    // Step 1: Get barId using correct status 'Pending'
+    const pendingList = await listKycQueue('Pending', 0, 100);
+    const match = pendingList.find((x) => x.userId === userId);
+    const barId = match?.barId;
+
+    // Step 2: Approve KYC
+    const d = await approveFn();
+    setDetail(d);
+
+    // Step 3: Call bar status API with PUT method
+    if (barId != null) {
+      const token = window.sessionStorage.getItem('sipsave-admin-access-token');
+      const baseUrl = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:5000';
+
+      await fetch(`${baseUrl}/api/v1/bars/${barId}/status`, {
+        method: 'PUT',                                       // ← PUT not POST
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({ action: 'Approve', reason: null }),
+      });
+    }
+
+    setModal(null);
+    router.push('/kyc');
+  } catch (err) {
+    setError(err instanceof ApiError ? err.message : 'Action failed');
+  } finally {
+    setBusy(false);
+  }
+}
+
+
 
   if (loading) return <p className="text-muted">Loading…</p>;
   if (error || !detail) {
@@ -178,7 +217,7 @@ export default function KycReviewPage() {
           <ModalActions
             busy={busy}
             onCancel={() => setModal(null)}
-            onConfirm={() => doAction(() => approveKyc(userId, dob || null))}
+            onConfirm={() => approveAndSyncBar(() => approveKyc(userId, dob || null))}
             confirmLabel="Approve"
             tone="success"
           />

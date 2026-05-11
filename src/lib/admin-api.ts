@@ -140,6 +140,7 @@ export const adminLogout = () => {
 export type KycQueueRowDto = {
   userId: number;
   mobileNumber: string;
+  barId: number;
   fullName: string | null;
   email: string | null;
   kycStatus: string;
