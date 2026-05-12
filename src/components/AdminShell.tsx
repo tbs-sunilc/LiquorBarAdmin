@@ -27,14 +27,16 @@ type NavItem = {
 
 const NAV: ReadonlyArray<NavItem> = [
   { href: '/',              icon: <IconDashboard />, label: 'Dashboard',     exact: true, group: 'primary' },
-  { href: '/kyc',           icon: <IconId />,        label: 'KYC Queue',     group: 'primary' },
-  { href: '/disputes',      icon: <IconScale />,     label: 'Disputes',      group: 'primary' },
   { href: '/users',         icon: <IconUsers />,     label: 'Users',         group: 'primary' },
+  { href: '/kyc',           icon: <IconId />,        label: ' User KYC Queue',     group: 'primary' },
+  { href: '/bar-kyc',        icon: <IconId />,        label: 'Bar Kyc Queue', group: 'primary' },
+  { href: '/disputes',      icon: <IconScale />,     label: 'Disputes',      group: 'primary' },
   { href: '/subscriptions', icon: <IconCard />,      label: 'Subscriptions', group: 'platform' },
   { href: '/featured',      icon: <IconStar />,      label: 'Featured',      group: 'platform' },
   { href: '/dry-days',      icon: <IconCalendar />,  label: 'Dry Days',      group: 'platform' },
   { href: '/analytics',     icon: <IconChart />,     label: 'Analytics',     group: 'platform' },
   { href: '/settings',      icon: <IconGear />,      label: 'Settings',      group: 'system' },
+  
 ];
 
 export function AdminShell({ children }: { children: ReactNode }) {
