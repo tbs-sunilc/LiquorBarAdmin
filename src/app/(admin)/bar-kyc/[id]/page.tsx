@@ -31,6 +31,13 @@ type DocRow = {
   verdict: DocVerdict;
 };
 
+type OpeningHoursRow = {
+  day: string;
+  hours: string;
+  closed: boolean;
+  sort: number;
+};
+
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function deriveSlaLabel(hoursWaiting: number): string {
@@ -61,6 +68,129 @@ function verdictBadge(v: DocVerdict, missing: boolean) {
 }
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
+
+const DAY_ORDER = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+const DAY_ALIASES: Record<string, string> = {
+  mon: 'Monday',
+  monday: 'Monday',
+  tue: 'Tuesday',
+  tues: 'Tuesday',
+  tuesday: 'Tuesday',
+  wed: 'Wednesday',
+  wednesday: 'Wednesday',
+  thu: 'Thursday',
+  thur: 'Thursday',
+  thurs: 'Thursday',
+  thursday: 'Thursday',
+  fri: 'Friday',
+  friday: 'Friday',
+  sat: 'Saturday',
+  saturday: 'Saturday',
+  sun: 'Sunday',
+  sunday: 'Sunday',
+};
+
+function normalizeDay(day: unknown, fallbackIndex: number): string {
+  if (typeof day === 'number') return DAY_ORDER[(day + 6) % 7] ?? `Day ${fallbackIndex + 1}`;
+  const key = String(day ?? '').trim().toLowerCase();
+  return DAY_ALIASES[key] ?? (key ? key.charAt(0).toUpperCase() + key.slice(1) : `Day ${fallbackIndex + 1}`);
+}
+
+function daySort(day: string): number {
+  const index = DAY_ORDER.indexOf(day);
+  return index === -1 ? 99 : index;
+}
+
+function formatTime(value: unknown): string | null {
+  if (value == null || value === '') return null;
+  if (typeof value === 'number') {
+    const hours = Math.floor(value / 60);
+    const minutes = value % 60;
+    return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+  }
+  const text = String(value).trim();
+  const match = /^(\d{1,2}):(\d{2})(?::\d{2})?$/.exec(text);
+  if (!match) return text;
+  return `${match[1].padStart(2, '0')}:${match[2]}`;
+}
+
+function buildHoursLabel(source: Record<string, unknown> | string): { hours: string; closed: boolean } {
+  if (typeof source === 'string') {
+    return { hours: source, closed: /closed/i.test(source) };
+  }
+
+  const closed = Boolean(source.closed ?? source.isClosed ?? source.isHoliday);
+  if (closed) return { hours: 'Closed', closed: true };
+
+  const open = formatTime(source.open ?? source.openTime ?? source.from ?? source.start);
+  const close = formatTime(source.close ?? source.closeTime ?? source.to ?? source.end);
+  const hours = open && close ? `${open} - ${close}` : String(source.label ?? source.hours ?? 'Hours not provided');
+
+  return { hours, closed: false };
+}
+
+function parseOpeningHours(raw: string | null): { rows: OpeningHoursRow[]; fallback: string | null } {
+  if (!raw) return { rows: [], fallback: null };
+
+  try {
+    const parsed = JSON.parse(raw) as unknown;
+    let rows: OpeningHoursRow[] = [];
+
+    if (Array.isArray(parsed)) {
+      rows = parsed.map((entry, index) => {
+        const item = typeof entry === 'object' && entry !== null ? entry as Record<string, unknown> : { hours: String(entry) };
+        const day = normalizeDay(item.day ?? item.dayOfWeek ?? item.name ?? index, index);
+        const { hours, closed } = buildHoursLabel(item);
+        return { day, hours, closed, sort: daySort(day) };
+      });
+    } else if (typeof parsed === 'object' && parsed !== null) {
+      rows = Object.entries(parsed as Record<string, unknown>).map(([key, value], index) => {
+        const day = normalizeDay(key, index);
+        const { hours, closed } =
+          typeof value === 'object' && value !== null
+            ? buildHoursLabel(value as Record<string, unknown>)
+            : buildHoursLabel(String(value ?? 'Hours not provided'));
+        return { day, hours, closed, sort: daySort(day) };
+      });
+    }
+
+    return { rows: rows.sort((a, b) => a.sort - b.sort), fallback: rows.length > 0 ? null : raw };
+  } catch {
+    return { rows: [], fallback: raw };
+  }
+}
+
+function OpeningHoursDisplay({ value }: { value: string | null }) {
+  const { rows, fallback } = parseOpeningHours(value);
+
+  if (!value) return <span className="text-muted">-</span>;
+
+  if (fallback) {
+    return (
+      <div className="rounded-lg border border-hairline bg-ivory-2 px-3 py-2 text-sm text-ink">
+        {fallback}
+      </div>
+    );
+  }
+
+  return (
+    <div className="rounded-lg border border-hairline bg-ivory-2/70 p-3">
+      <div className="grid gap-2 sm:grid-cols-2">
+        {rows.map((row) => (
+          <div
+            key={row.day}
+            className="flex items-center justify-between gap-3 rounded-md border border-hairline bg-surface px-3 py-2"
+          >
+            <span className="text-xs font-semibold uppercase tracking-[0.12em] text-muted">{row.day.slice(0, 3)}</span>
+            <span className={`text-sm font-semibold ${row.closed ? 'text-[color:var(--color-danger)]' : 'text-ink'}`}>
+              {row.hours}
+            </span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 export default function BarKycDetailPage() {
   const params = useParams<{ id: string }>();
@@ -273,7 +403,7 @@ export default function BarKycDetailPage() {
                 { label: 'GSTIN',           value: <span className="font-mono text-xs">{bar.gstin}</span> },
                 { label: 'FSSAI',           value: bar.fssaiLicenceNumber },
                 { label: 'Liquor Licence',  value: bar.liquorLicenceNumber },
-                { label: 'Opening Hours',   value: bar.openingHoursJson ?? '—' },
+                { label: 'Opening Hours',   value: <OpeningHoursDisplay value={bar.openingHoursJson} /> },
               ].map(({ label, value }) => (
                 <tr key={label} className="border-b border-[color:var(--color-border)] last:border-0">
                   <td className="py-2.5 pr-4 text-muted w-36 align-top">{label}</td>
@@ -310,7 +440,7 @@ export default function BarKycDetailPage() {
                       </a>
                     )}
                     {missing ? (
-                      <span className="badge badge-danger">Missing</span>
+                      verdictBadge(doc.verdict, true)
                     ) : (
                       <select
                         value={doc.verdict}
