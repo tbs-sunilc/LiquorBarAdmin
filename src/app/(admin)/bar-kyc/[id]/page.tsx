@@ -1,7 +1,7 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { useState } from 'react';
 import {
   BackLink,
   Badge,
@@ -10,51 +10,44 @@ import {
   Modal,
   ModalActions,
 } from '@/components/ui';
+import {
+  ApiError,
+  type BarKycReviewDetailDto,
+  approveBarKyc,
+  getBarKycDetail,
+  rejectBarKyc,
+  resubmitBarKyc,
+} from '@/lib/admin-api';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 type DocVerdict = 'Valid' | 'Invalid' | 'Unclear';
+type ModalState = 'approve' | 'reject' | 'resubmit' | null;
 
-type Document = {
+type DocRow = {
   id: string;
   label: string;
-  fileName: string | null;
+  signedUrl: string | null;
   verdict: DocVerdict;
 };
 
-// ─── Mock Data (replace with real API call) ───────────────────────────────────
-
-const mockBar = {
-  id: 1,
-  barName: 'The Rooftop Bar',
-  city: 'Pune',
-  state: 'Maharashtra',
-  owner: 'Vikrant Joshi',
-  email: 'vikrant@rooftop.in',
-  mobile: '+91 98123 45678',
-  address: 'Level 9, Icon Tower, Baner, Pune 411045',
-  gstin: '27AAPFU0939F1ZV',
-  gstinVerified: true,
-  openingHours: '6:00 PM – 1:00 AM',
-  submittedAgo: '3 days ago',
-  slaStatus: 'Breached' as 'Breached' | 'Near' | 'OK',
-  slaDetail: 'Breached by 1 day · Submitted 3 days ago · 48h SLA',
-  docsUploaded: 3,
-  docsTotal: 4,
-  docsMissingLabel: 'Bar photos missing',
-  kycStatus: 'PendingReview',
-};
-
-const mockDocs: Document[] = [
-  { id: 'liquor',  label: 'State Liquor Licence',  fileName: 'Maharashtra_LQ_2024_08821.pdf', verdict: 'Valid' },
-  { id: 'fssai',   label: 'FSSAI Certificate',     fileName: 'FSSAI_2024_cert.pdf',           verdict: 'Valid' },
-  { id: 'gstin',   label: 'GSTIN Certificate',     fileName: 'GST_certificate.pdf',           verdict: 'Valid' },
-  { id: 'photos',  label: 'Bar Photos',             fileName: null,                            verdict: 'Unclear' },
-];
-
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-type ModalState = 'approve' | 'reject' | 'resubmit' | null;
+function deriveSlaLabel(hoursWaiting: number): string {
+  if (hoursWaiting > 48) {
+    const over = Math.floor(hoursWaiting - 48);
+    return `Breached by ${over}h · ${Math.floor(hoursWaiting)}h waiting · 48h SLA`;
+  }
+  if (hoursWaiting > 36) return `Near SLA · ${Math.floor(hoursWaiting)}h waiting · 48h SLA`;
+  return `Within SLA · ${Math.floor(hoursWaiting)}h waiting · 48h SLA`;
+}
+
+type SlaLevel = 'Breached' | 'Near' | 'OK';
+function deriveSlaLevel(hoursWaiting: number): SlaLevel {
+  if (hoursWaiting > 48) return 'Breached';
+  if (hoursWaiting > 36) return 'Near';
+  return 'OK';
+}
 
 function verdictBadge(v: DocVerdict, missing: boolean) {
   if (missing) return <span className="badge badge-danger">Missing</span>;
@@ -72,19 +65,42 @@ function verdictBadge(v: DocVerdict, missing: boolean) {
 export default function BarKycDetailPage() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
-  const barId = Number(params.id);
+  const barId  = Number(params.id);
 
-  // In production replace with useEffect + API call using barId
-  const bar = mockBar;
-  const [docs, setDocs] = useState<Document[]>(mockDocs);
-  const [adminNote, setAdminNote] = useState('Bar photos missing — sent reminder email to vikrant@rooftop.in on Apr 9. Owner confirmed uploading within 24h. Liquor licence valid until Mar 2025.');
-  const [modal, setModal] = useState<ModalState>(null);
-  const [busy, setBusy] = useState(false);
-  const [rejectReason, setRejectReason] = useState('');
+  const [bar,          setBar]          = useState<BarKycReviewDetailDto | null>(null);
+  const [docs,         setDocs]         = useState<DocRow[]>([]);
+  const [loading,      setLoading]      = useState(true);
+  const [error,        setError]        = useState<string | null>(null);
+  const [adminNote,    setAdminNote]    = useState('');
+  const [modal,        setModal]        = useState<ModalState>(null);
+  const [busy,         setBusy]         = useState(false);
+  const [actionError,  setActionError]  = useState<string | null>(null);
+  const [rejectReason,   setRejectReason]   = useState('');
   const [resubmitReason, setResubmitReason] = useState('');
-  const [rejectPermanent, setRejectPermanent] = useState(false);
 
-  const closed = bar.kycStatus === 'Approved' || bar.kycStatus === 'PermanentlyRejected';
+  useEffect(() => {
+    if (!Number.isFinite(barId)) return;
+    (async () => {
+      try {
+        const detail = await getBarKycDetail(barId);
+        setBar(detail);
+        setDocs(buildDocRows(detail));
+      } catch (err) {
+        setError(err instanceof ApiError ? err.message : 'Failed to load bar details');
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, [barId]);
+
+  function buildDocRows(d: BarKycReviewDetailDto): DocRow[] {
+    return [
+      { id: 'gstin',   label: 'GSTIN Certificate',      signedUrl: d.gstinDocSignedUrl,          verdict: 'Valid' },
+      { id: 'fssai',   label: 'FSSAI Certificate',       signedUrl: d.fssaiDocSignedUrl,           verdict: 'Valid' },
+      { id: 'liquor',  label: 'State Liquor Licence',    signedUrl: d.liquorLicenceDocSignedUrl,   verdict: 'Valid' },
+      { id: 'photos',  label: 'Bar Photos',               signedUrl: d.photoGallerySignedUrls[0] ?? null, verdict: d.photoGallerySignedUrls.length > 0 ? 'Valid' : 'Unclear' },
+    ];
+  }
 
   function updateVerdict(docId: string, v: DocVerdict) {
     setDocs((prev) => prev.map((d) => d.id === docId ? { ...d, verdict: v } : d));
@@ -92,24 +108,72 @@ export default function BarKycDetailPage() {
 
   async function handleApprove() {
     setBusy(true);
-    // TODO: call approveBar(barId) API
-    setTimeout(() => { setBusy(false); setModal(null); router.push('/bar-kyc'); }, 800);
+    setActionError(null);
+    try {
+      await approveBarKyc(barId, adminNote || undefined);
+      router.push('/bar-kyc');
+    } catch (err) {
+      setActionError(err instanceof ApiError ? err.message : 'Approve failed');
+      setBusy(false);
+      setModal(null);
+    }
   }
 
   async function handleReject() {
     setBusy(true);
-    // TODO: call rejectBar(barId, rejectReason, rejectPermanent) API
-    setTimeout(() => { setBusy(false); setModal(null); router.push('/bar-kyc'); }, 800);
+    setActionError(null);
+    try {
+      await rejectBarKyc(barId, rejectReason);
+      router.push('/bar-kyc');
+    } catch (err) {
+      setActionError(err instanceof ApiError ? err.message : 'Reject failed');
+      setBusy(false);
+      setModal(null);
+    }
   }
 
   async function handleResubmit() {
     setBusy(true);
-    // TODO: call resubmitBar(barId, resubmitReason) API
-    setTimeout(() => { setBusy(false); setModal(null); router.push('/bar-kyc'); }, 800);
+    setActionError(null);
+    try {
+      await resubmitBarKyc(barId, resubmitReason);
+      router.push('/bar-kyc');
+    } catch (err) {
+      setActionError(err instanceof ApiError ? err.message : 'Resubmit request failed');
+      setBusy(false);
+      setModal(null);
+    }
   }
 
-  const slaBorderColor = bar.slaStatus === 'Breached' ? 'var(--color-danger)' : bar.slaStatus === 'Near' ? 'var(--color-accent)' : 'var(--color-success)';
-  const slaTextColor   = bar.slaStatus === 'Breached' ? 'var(--color-danger)' : bar.slaStatus === 'Near' ? 'var(--color-accent)' : 'var(--color-success)';
+  // ── Loading / Error states ──────────────────────────────────────────────────
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[300px]">
+        <p className="text-muted text-sm">Loading bar details…</p>
+      </div>
+    );
+  }
+
+  if (error || !bar) {
+    return (
+      <div>
+        <BackLink href="/bar-kyc">Back to Queue</BackLink>
+        <div style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 8, padding: '16px', marginTop: 16, color: '#dc2626', fontSize: 14 }}>
+          {error ?? 'Bar not found.'}
+        </div>
+      </div>
+    );
+  }
+
+  const slaLevel  = deriveSlaLevel(bar.hoursWaiting);
+  const slaDetail = deriveSlaLabel(bar.hoursWaiting);
+  const closed    = bar.kycStatus === 'Approved';
+
+  const slaBorderColor = slaLevel === 'Breached' ? 'var(--color-danger)' : slaLevel === 'Near' ? 'var(--color-accent)' : 'var(--color-success)';
+  const slaTextColor   = slaLevel === 'Breached' ? 'var(--color-danger)' : slaLevel === 'Near' ? 'var(--color-accent)' : 'var(--color-success)';
+
+  const docsUploaded = docs.filter(d => d.signedUrl !== null).length;
 
   return (
     <>
@@ -118,11 +182,11 @@ export default function BarKycDetailPage() {
         <div>
           <BackLink href="/bar-kyc">Back to Queue</BackLink>
           <h1 className="font-display text-2xl text-ink mt-1">
-            KYC Review — {bar.barName}
+            KYC Review — {bar.businessName}
           </h1>
           <p className="text-sm text-muted mt-1">
-            {bar.city}, {bar.state} · Submitted {bar.submittedAgo}
-            {bar.slaStatus === 'Breached' && (
+            {bar.city}, {bar.stateCode} · {Math.floor(bar.hoursWaiting)}h waiting
+            {bar.slaBreached && (
               <span className="ml-2 text-[color:var(--color-danger)]">⚠ SLA Breached</span>
             )}
           </p>
@@ -155,29 +219,40 @@ export default function BarKycDetailPage() {
         )}
       </div>
 
+      {/* ── Action error ── */}
+      {actionError && (
+        <div style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 8, padding: '12px 16px', marginBottom: 20, color: '#dc2626', fontSize: 14 }}>
+          {actionError}
+        </div>
+      )}
+
       {/* ── 3 stat cards ── */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
         {/* SLA */}
         <div style={{ borderLeft: `4px solid ${slaBorderColor}`, background: 'var(--color-surface)', borderRadius: 'var(--radius-lg)', padding: '16px 20px', boxShadow: 'var(--shadow-xs)' }}>
           <p className="text-xs text-muted uppercase tracking-widest font-semibold mb-2">SLA Status</p>
           <p style={{ fontSize: 20, fontWeight: 700, color: slaTextColor }}>
-            {bar.slaStatus === 'Breached' ? 'Breached by 1 day' : bar.slaStatus === 'Near' ? 'Near SLA' : 'Within SLA'}
+            {slaLevel === 'Breached' ? `Breached by ${Math.floor(bar.hoursWaiting - 48)}h` : slaLevel === 'Near' ? 'Near SLA' : 'Within SLA'}
           </p>
-          <p className="text-xs text-muted mt-1">{bar.slaDetail}</p>
+          <p className="text-xs text-muted mt-1">{slaDetail}</p>
         </div>
 
         {/* Documents */}
         <div style={{ borderLeft: '4px solid var(--color-accent)', background: 'var(--color-surface)', borderRadius: 'var(--radius-lg)', padding: '16px 20px', boxShadow: 'var(--shadow-xs)' }}>
           <p className="text-xs text-muted uppercase tracking-widest font-semibold mb-2">Documents</p>
-          <p style={{ fontSize: 20, fontWeight: 700, color: 'var(--color-text)' }}>{bar.docsUploaded} / {bar.docsTotal}</p>
-          <p className="text-xs mt-1" style={{ color: 'var(--color-accent)' }}>{bar.docsMissingLabel}</p>
+          <p style={{ fontSize: 20, fontWeight: 700, color: 'var(--color-text)' }}>{docsUploaded} / {docs.length}</p>
+          {docsUploaded < docs.length && (
+            <p className="text-xs mt-1" style={{ color: 'var(--color-accent)' }}>
+              {docs.filter(d => d.signedUrl === null).map(d => d.label).join(', ')} missing
+            </p>
+          )}
         </div>
 
         {/* Applicant */}
         <div style={{ borderLeft: '4px solid var(--color-info)', background: 'var(--color-surface)', borderRadius: 'var(--radius-lg)', padding: '16px 20px', boxShadow: 'var(--shadow-xs)' }}>
           <p className="text-xs text-muted uppercase tracking-widest font-semibold mb-2">Applicant</p>
-          <p style={{ fontSize: 18, fontWeight: 700, color: 'var(--color-text)' }}>{bar.owner}</p>
-          <p className="text-xs text-muted mt-1">{bar.email}</p>
+          <p style={{ fontSize: 18, fontWeight: 700, color: 'var(--color-text)' }}>{bar.ownerFullName ?? bar.contactEmail}</p>
+          <p className="text-xs text-muted mt-1">{bar.contactEmail}</p>
         </div>
       </div>
 
@@ -189,18 +264,16 @@ export default function BarKycDetailPage() {
           <table className="w-full text-sm">
             <tbody>
               {[
-                { label: 'Bar Name',      value: bar.barName },
-                { label: 'Owner',         value: bar.owner },
-                { label: 'Address',       value: bar.address },
-                { label: 'Mobile',        value: bar.mobile },
-                { label: 'Email',         value: bar.email },
-                { label: 'GSTIN',         value: (
-                  <span>
-                    <span className="font-mono text-xs">{bar.gstin}</span>
-                    {bar.gstinVerified && <span className="ml-1 text-[color:var(--color-success)]">✓</span>}
-                  </span>
-                )},
-                { label: 'Opening Hours', value: bar.openingHours },
+                { label: 'Bar Name',        value: bar.businessName },
+                { label: 'Legal Name',      value: bar.legalName ?? '—' },
+                { label: 'Owner',           value: bar.ownerFullName ?? '—' },
+                { label: 'Address',         value: [bar.addressLine1, bar.addressLine2, bar.locality, bar.city, bar.stateCode, bar.pincode].filter(Boolean).join(', ') },
+                { label: 'Mobile',          value: bar.contactMobile },
+                { label: 'Email',           value: bar.contactEmail },
+                { label: 'GSTIN',           value: <span className="font-mono text-xs">{bar.gstin}</span> },
+                { label: 'FSSAI',           value: bar.fssaiLicenceNumber },
+                { label: 'Liquor Licence',  value: bar.liquorLicenceNumber },
+                { label: 'Opening Hours',   value: bar.openingHoursJson ?? '—' },
               ].map(({ label, value }) => (
                 <tr key={label} className="border-b border-[color:var(--color-border)] last:border-0">
                   <td className="py-2.5 pr-4 text-muted w-36 align-top">{label}</td>
@@ -215,19 +288,26 @@ export default function BarKycDetailPage() {
         <Card title="Document Verification">
           <div className="space-y-4">
             {docs.map((doc) => {
-              const missing = doc.fileName === null;
+              const missing = doc.signedUrl === null;
               return (
                 <div key={doc.id} className="flex items-start justify-between gap-3 pb-4 border-b border-[color:var(--color-border)] last:border-0 last:pb-0">
                   <div>
                     <p className="text-sm font-semibold text-ink">{doc.label}</p>
-                    {doc.fileName
-                      ? <p className="text-xs text-muted mt-0.5">{doc.fileName}</p>
-                      : <p className="text-xs mt-0.5" style={{ color: 'var(--color-danger)' }}>Not uploaded yet</p>
+                    {missing
+                      ? <p className="text-xs mt-0.5" style={{ color: 'var(--color-danger)' }}>Not uploaded yet</p>
+                      : <p className="text-xs text-muted mt-0.5">Uploaded</p>
                     }
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
                     {!missing && (
-                      <button className="btn btn-sm btn-ghost text-xs">👁 View</button>
+                      <a
+                        href={doc.signedUrl!}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="btn btn-sm btn-ghost text-xs"
+                      >
+                        👁 View
+                      </a>
                     )}
                     {missing ? (
                       <span className="badge badge-danger">Missing</span>
@@ -246,6 +326,20 @@ export default function BarKycDetailPage() {
                 </div>
               );
             })}
+
+            {/* Photo gallery previews */}
+            {bar.photoGallerySignedUrls.length > 1 && (
+              <div>
+                <p className="text-xs text-muted mb-2">Photo Gallery ({bar.photoGallerySignedUrls.length} photos)</p>
+                <div className="flex gap-2 flex-wrap">
+                  {bar.photoGallerySignedUrls.slice(1).map((url, i) => (
+                    <a key={i} href={url} target="_blank" rel="noopener noreferrer" className="btn btn-sm btn-ghost text-xs">
+                      Photo {i + 2}
+                    </a>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         </Card>
       </div>
@@ -292,20 +386,11 @@ export default function BarKycDetailPage() {
               className="input"
             />
           </div>
-          <label className="mt-3 inline-flex items-center gap-2 text-sm text-ink">
-            <input
-              type="checkbox"
-              checked={rejectPermanent}
-              onChange={(e) => setRejectPermanent(e.target.checked)}
-              className="accent-[color:var(--color-accent)]"
-            />
-            Permanent — block re-registration with the same documents
-          </label>
           <ModalActions
             busy={busy || rejectReason.trim().length < 4}
             onCancel={() => setModal(null)}
             onConfirm={handleReject}
-            confirmLabel={rejectPermanent ? 'Reject Permanently' : 'Reject'}
+            confirmLabel="Reject"
             tone="danger"
           />
         </Modal>

@@ -176,6 +176,68 @@ export const rejectKyc = (userId: number, reason: string, permanent: boolean) =>
 export const resubmitKyc = (userId: number, reason: string) =>
   request<KycReviewDetailDto>(`/api/admin/kyc/${userId}/resubmit`, { method: 'POST', body: JSON.stringify({ reason }) });
 
+// ---- Bar KYC ----
+
+export type BarKycQueueRowDto = {
+  barId: number;
+  businessName: string;
+  city: string;
+  stateCode: string;
+  ownerFullName: string | null;
+  contactMobile: string;
+  contactEmail: string;
+  kycStatus: string;
+  docsUploaded: number;
+  docsTotal: number;
+  hoursWaiting: number;
+  slaBreached: boolean;
+  verifiedAt: string | null;
+  rejectionReason: string | null;
+};
+
+export type BarKycReviewDetailDto = {
+  barId: number;
+  businessName: string;
+  legalName: string | null;
+  city: string;
+  stateCode: string;
+  addressLine1: string;
+  addressLine2: string | null;
+  locality: string | null;
+  pincode: string;
+  contactMobile: string;
+  contactEmail: string;
+  gstin: string;
+  fssaiLicenceNumber: string;
+  liquorLicenceNumber: string;
+  openingHoursJson: string | null;
+  kycStatus: string;
+  rejectionReason: string | null;
+  isVerified: boolean;
+  verifiedAt: string | null;
+  verifiedByAdminId: number | null;
+  ownerFullName: string | null;
+  ownerEmail: string | null;
+  hoursWaiting: number;
+  slaBreached: boolean;
+  gstinDocSignedUrl: string | null;
+  fssaiDocSignedUrl: string | null;
+  liquorLicenceDocSignedUrl: string | null;
+  photoGallerySignedUrls: string[];
+};
+
+export const listBarKycQueue = (status = 'PendingReview', skip = 0, take = 100) =>
+  request<BarKycQueueRowDto[]>(`/api/admin/bar-kyc?status=${status}&skip=${skip}&take=${take}`);
+export const getBarKycDetail = (barId: number) =>
+  request<BarKycReviewDetailDto>(`/api/admin/bar-kyc/${barId}`);
+export const approveBarKyc = (barId: number, adminNotes?: string) =>
+  request<void>(`/api/admin/bar-kyc/${barId}/approve`, { method: 'POST', body: JSON.stringify({ adminNotes }) });
+export const rejectBarKyc = (barId: number, reason: string) =>
+  request<void>(`/api/admin/bar-kyc/${barId}/reject`, { method: 'POST', body: JSON.stringify({ reason }) });
+export const resubmitBarKyc = (barId: number, reason: string) =>
+  request<void>(`/api/admin/bar-kyc/${barId}/resubmit`, { method: 'POST', body: JSON.stringify({ reason }) });
+
+
 // ---- Disputes ----
 
 export type DisputeRowDto = {
