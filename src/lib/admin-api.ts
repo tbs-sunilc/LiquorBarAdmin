@@ -46,6 +46,17 @@ async function request<T>(path: string, init: RequestInit = {}, anon = false): P
           ? String((body as Record<string, unknown>).title)
           : res.statusText;
       console.error(`❌ API Error [${res.status}]: ${title}`, body);
+
+      // Handle session expiry (401 Unauthorized)
+      if (res.status === 401 && !anon) {
+        clearSession();
+        if (typeof window !== 'undefined') {
+          window.location.href = '/login';
+          // Return a never-resolving promise to stop execution in the calling component
+          return new Promise(() => {});
+        }
+      }
+
       throw new ApiError(res.status, title, body);
     }
     console.log(`✅ API Success [${res.status}]`);
@@ -99,6 +110,7 @@ export function clearSession() {
   window.sessionStorage.removeItem(TOKEN_KEY);
   window.sessionStorage.removeItem(REFRESH_KEY);
   window.sessionStorage.removeItem(ADMIN_KEY);
+  window.localStorage.removeItem('session');
 }
 
 export function hasAdminToken(): boolean {
