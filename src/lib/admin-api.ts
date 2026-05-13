@@ -389,6 +389,84 @@ export const listSubscriptions = (status?: string, skip = 0, take = 50) => {
 export const getSubscription = (id: number) =>
   request<AdminSubscriptionRowDto>(`/api/admin/subscriptions/${id}`);
 
+// ---- Featured listings ----
+
+export type AdminFeaturedListingRowDto = {
+  id: number;
+  barId: number;
+  barName: string;
+  city: string;
+  paymentId: number | null;
+  slotType: string;
+  scopeCity: string | null;
+  scopeCategory: string | null;
+  priority: number;
+  startsAtUtc: string;
+  endsAtUtc: string;
+  impressionCount: number;
+  clickCount: number;
+  status: string;
+  cancelledAtUtc: string | null;
+  cancelledByAdminId: number | null;
+  cancellationReason: string | null;
+  createdAtUtc: string;
+  updatedAtUtc: string | null;
+};
+
+export type CreateAdminFeaturedListingRequest = {
+  slotType: string;
+  scopeCity?: string | null;
+  scopeCategory?: string | null;
+  priority?: number | null;
+  startsAtUtc: string;
+  endsAtUtc: string;
+  status?: string | null;
+};
+
+export type UpdateFeaturedListingRequest = {
+  slotType: string;
+  scopeCity?: string | null;
+  scopeCategory?: string | null;
+  priority?: number | null;
+  startsAtUtc: string;
+  endsAtUtc: string;
+  status: string;
+};
+
+export type RenewFeaturedListingRequest = {
+  days: number;
+};
+
+export const listFeaturedListings = (status?: string, skip = 0, take = 50) => {
+  const q = new URLSearchParams({ skip: String(skip), take: String(take) });
+  if (status) q.set('status', status);
+  return request<AdminFeaturedListingRowDto[]>(`/api/admin/featured-listings?${q.toString()}`);
+};
+
+export const createFeaturedListing = (barId: number, payload: CreateAdminFeaturedListingRequest) =>
+  request<AdminFeaturedListingRowDto>(`/api/admin/bars/${barId}/featured-listings`, {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+
+export const updateFeaturedListing = (id: number, payload: UpdateFeaturedListingRequest) =>
+  request<AdminFeaturedListingRowDto>(`/api/v1/featured-listings/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(payload),
+  });
+
+export const removeFeaturedListing = (id: number, reason?: string) =>
+  request<AdminFeaturedListingRowDto>(`/api/admin/featured-listings/${id}/cancel`, {
+    method: 'POST',
+    body: JSON.stringify({ reason }),
+  });
+
+export const renewFeaturedListing = (id: number, payload: RenewFeaturedListingRequest) =>
+  request<AdminFeaturedListingRowDto>(`/api/admin/featured-listings/${id}/renew`, {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+
 // ---- Analytics ----
 
 export type PlatformAnalyticsDto = {

@@ -75,7 +75,18 @@ function mkKyc(
 const kycList = (status: string): KycQueueRowDto[] =>
   kycState
     .filter((k) => k.kycStatus === status)
-    .map(({ kycDocSignedUrl: _, kycReviewedAtUtc: _2, kycReviewedByAdminId: _3, kycRejectionReason: _4, dateOfBirth: _5, ...row }) => row);
+    .map((k) => ({
+      userId: k.userId,
+      mobileNumber: k.mobileNumber,
+      barId: 0,
+      fullName: k.fullName,
+      email: k.email,
+      kycStatus: k.kycStatus,
+      kycDocType: k.kycDocType,
+      kycSubmittedAtUtc: k.kycSubmittedAtUtc,
+      hoursWaiting: k.hoursWaiting,
+      slaBreached: k.slaBreached,
+    }));
 
 const kycGet = (userId: number): KycReviewDetailDto => {
   const k = kycState.find((x) => x.userId === userId);
@@ -352,6 +363,72 @@ function mkDryDay(stateCode: string, dryDate: string, title: string, description
 
 /* ─── Auth ───────────────────────────────────────── */
 
+type FeaturedRecord = {
+  id: number;
+  barId: number;
+  barName: string;
+  city: string;
+  paymentId: number | null;
+  slotType: string;
+  scopeCity: string | null;
+  scopeCategory: string | null;
+  priority: number;
+  startsAtUtc: string;
+  endsAtUtc: string;
+  impressionCount: number;
+  clickCount: number;
+  status: string;
+  cancelledAtUtc: string | null;
+  cancelledByAdminId: number | null;
+  cancellationReason: string | null;
+  createdAtUtc: string;
+  updatedAtUtc: string | null;
+};
+
+let featuredIdSeq = 200;
+const featuredState: FeaturedRecord[] = [
+  mkFeatured(501, 'Sky Lounge', 'Ahmedabad', 'CityTop', daysAgo(18), daysAhead(12), 8420, 284, 'Active', 10, null, null),
+  mkFeatured(506, 'Harbour Bar', 'Mumbai', 'CategoryTop', daysAgo(9), daysAhead(4), 5180, 196, 'Active', 20, null, null),
+  mkFeatured(509, 'Neon Nights Club', 'Delhi NCR', 'SearchBoost', daysAgo(14), daysAgo(3), 2840, 98, 'Expired', 30, null, null),
+];
+
+function mkFeatured(
+  barId: number,
+  barName: string,
+  city: string,
+  slotType: string,
+  startsAtUtc: string,
+  endsAtUtc: string,
+  impressionCount: number,
+  clickCount: number,
+  status: string,
+  priority: number,
+  cancelledAtUtc: string | null,
+  cancellationReason: string | null,
+): FeaturedRecord {
+  return {
+    id: featuredIdSeq++,
+    barId,
+    barName,
+    city,
+    paymentId: null,
+    slotType,
+    scopeCity: city,
+    scopeCategory: slotType === 'CategoryTop' ? 'Whisky' : null,
+    priority,
+    startsAtUtc,
+    endsAtUtc,
+    impressionCount,
+    clickCount,
+    status,
+    cancelledAtUtc,
+    cancelledByAdminId: cancelledAtUtc ? 1 : null,
+    cancellationReason,
+    createdAtUtc: startsAtUtc,
+    updatedAtUtc: null,
+  };
+}
+
 const adminProfile = {
   id: 1, fullName: 'SipSave Platform Admin', email: 'admin@sipsave.in',
   role: 'SuperAdmin', mfaEnabled: false,
@@ -445,6 +522,83 @@ export async function mockRequest<T>(path: string, init: RequestInit): Promise<T
   if (method === 'GET' && pathname === '/api/admin/subscriptions') {
     const status = q.get('status');
     return (status ? subsState.filter((s) => s.status === status) : subsState) as unknown as T;
+  }
+
+  if (method === 'GET' && pathname === '/api/admin/featured-listings') {
+    const status = q.get('status');
+    return (status ? featuredState.filter((f) => f.status === status) : featuredState) as unknown as T;
+  }
+  const featuredCreateMatch = /^\/api\/admin\/bars\/(\d+)\/featured-listings$/.exec(pathname);
+  if (featuredCreateMatch && method === 'POST') {
+    const barId = Number(featuredCreateMatch[1]);
+    const sub = subsState.find((s) => s.barId === barId);
+    const row: FeaturedRecord = {
+      id: featuredIdSeq++,
+      barId,
+      barName: sub?.barName ?? `Bar #${barId}`,
+      city: (body.scopeCity as string) ?? 'Unknown',
+      paymentId: null,
+      slotType: body.slotType as string,
+      scopeCity: (body.scopeCity as string) ?? null,
+      scopeCategory: (body.scopeCategory as string) ?? null,
+      priority: Number(body.priority ?? 100),
+      startsAtUtc: body.startsAtUtc as string,
+      endsAtUtc: body.endsAtUtc as string,
+      impressionCount: 0,
+      clickCount: 0,
+      status: (body.status as string) ?? 'Active',
+      cancelledAtUtc: null,
+      cancelledByAdminId: null,
+      cancellationReason: null,
+      createdAtUtc: new Date().toISOString(),
+      updatedAtUtc: null,
+    };
+    featuredState.unshift(row);
+    return row as unknown as T;
+  }
+  const featuredUpdateMatch = /^\/api\/v1\/featured-listings\/(\d+)$/.exec(pathname);
+  if (featuredUpdateMatch && method === 'PUT') {
+    const id = Number(featuredUpdateMatch[1]);
+    const row = featuredState.find((f) => f.id === id);
+    if (!row) throw new ApiError(404, 'Not found', null);
+    row.slotType = body.slotType as string;
+    row.scopeCity = (body.scopeCity as string) ?? null;
+    row.scopeCategory = (body.scopeCategory as string) ?? null;
+    row.priority = Number(body.priority ?? 100);
+    row.startsAtUtc = body.startsAtUtc as string;
+    row.endsAtUtc = body.endsAtUtc as string;
+    row.status = body.status as string;
+    row.updatedAtUtc = new Date().toISOString();
+    return row as unknown as T;
+  }
+  const featuredCancelMatch = /^\/api\/admin\/featured-listings\/(\d+)\/cancel$/.exec(pathname);
+  if (featuredCancelMatch && method === 'POST') {
+    const id = Number(featuredCancelMatch[1]);
+    const row = featuredState.find((f) => f.id === id);
+    if (!row) throw new ApiError(404, 'Not found', null);
+    row.status = 'Cancelled';
+    row.cancelledAtUtc = new Date().toISOString();
+    row.cancelledByAdminId = 1;
+    row.cancellationReason = (body.reason as string) ?? null;
+    row.updatedAtUtc = new Date().toISOString();
+    return row as unknown as T;
+  }
+  const featuredRenewMatch = /^\/api\/admin\/featured-listings\/(\d+)\/renew$/.exec(pathname);
+  if (featuredRenewMatch && method === 'POST') {
+    const id = Number(featuredRenewMatch[1]);
+    const row = featuredState.find((f) => f.id === id);
+    if (!row) throw new ApiError(404, 'Not found', null);
+    const days = Number(body.days ?? 7);
+    const start = new Date();
+    const end = new Date(start.getTime() + days * 86_400_000);
+    row.startsAtUtc = start.toISOString();
+    row.endsAtUtc = end.toISOString();
+    row.status = 'Active';
+    row.cancelledAtUtc = null;
+    row.cancelledByAdminId = null;
+    row.cancellationReason = null;
+    row.updatedAtUtc = new Date().toISOString();
+    return row as unknown as T;
   }
 
   // Analytics

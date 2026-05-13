@@ -255,6 +255,11 @@ export function Modal({
   width?: string;
 }) {
   const ref = useRef<HTMLDivElement>(null);
+  const onCloseRef = useRef(onClose);
+
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  }, [onClose]);
 
   useEffect(() => {
     const prev = document.activeElement as HTMLElement | null;
@@ -264,7 +269,7 @@ export function Modal({
     first?.focus();
 
     function onKey(e: KeyboardEvent) {
-      if (e.key === 'Escape') { e.preventDefault(); onClose(); return; }
+      if (e.key === 'Escape') { e.preventDefault(); onCloseRef.current(); return; }
       if (e.key !== 'Tab' || !ref.current) return;
       const focusables = ref.current.querySelectorAll<HTMLElement>(
         'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
@@ -282,7 +287,7 @@ export function Modal({
       document.body.style.overflow = '';
       prev?.focus();
     };
-  }, [onClose]);
+  }, []);
 
   return (
     <div
