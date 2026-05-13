@@ -26,17 +26,18 @@ type NavItem = {
 };
 
 const NAV: ReadonlyArray<NavItem> = [
-  { href: '/',              icon: <IconDashboard />, label: 'Dashboard',     exact: true, group: 'primary' },
-  { href: '/users',         icon: <IconUsers />,     label: 'Users',         group: 'primary' },
-  { href: '/kyc',           icon: <IconId />,        label: ' User KYC Queue',     group: 'primary' },
-  { href: '/bar-kyc',        icon: <IconId />,        label: 'Bar Kyc Queue', group: 'primary' },
-  { href: '/disputes',      icon: <IconScale />,     label: 'Disputes',      group: 'primary' },
-  { href: '/subscriptions', icon: <IconCard />,      label: 'Subscriptions', group: 'platform' },
-  { href: '/featured',      icon: <IconStar />,      label: 'Featured',      group: 'platform' },
-  { href: '/dry-days',      icon: <IconCalendar />,  label: 'Dry Days',      group: 'platform' },
-  { href: '/analytics',     icon: <IconChart />,     label: 'Analytics',     group: 'platform' },
-  { href: '/settings',      icon: <IconGear />,      label: 'Settings',      group: 'system' },
-  
+  { href: '/', icon: <IconDashboard />, label: 'Dashboard', exact: true, group: 'primary' },
+  { href: '/users', icon: <IconUsers />, label: 'Users', group: 'primary' },
+  { href: '/kyc', icon: <IconId />, label: ' User KYC Queue', group: 'primary' },
+  { href: '/bar-kyc', icon: <IconId />, label: 'Bar Kyc Queue', group: 'primary' },
+  { href: '/disputes', icon: <IconScale />, label: 'Disputes', group: 'primary' },
+  { href: '/subscriptions', icon: <IconCard />, label: 'Subscriptions', group: 'platform' },
+  { href: '/featured', icon: <IconStar />, label: 'Featured', group: 'platform' },
+  { href: '/dry-days', icon: <IconCalendar />, label: 'Dry Days', group: 'platform' },
+  { href: '/analytics', icon: <IconChart />, label: 'Analytics', group: 'platform' },
+  { href: '/settings', icon: <IconGear />, label: 'Admin Settings', group: 'system' },
+  { href: '/settings', icon: <IconGear />, label: 'Platform Settings', group: 'system' },
+
 ];
 
 export function AdminShell({ children }: { children: ReactNode }) {
@@ -139,8 +140,8 @@ function Sidebar({
 }) {
   const groups: Array<{ heading: string; group: NavItem['group'] }> = [
     { heading: 'Operations', group: 'primary' },
-    { heading: 'Platform',   group: 'platform' },
-    { heading: 'System',     group: 'system' },
+    { heading: 'Platform', group: 'platform' },
+    { heading: 'System', group: 'system' },
   ];
 
   return (
@@ -263,13 +264,13 @@ function Base({ children, size = 18 }: { children: ReactNode; size?: number }) {
     </svg>
   );
 }
-function IconDashboard() { return <Base><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></Base>; }
-function IconId()        { return <Base><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="9" cy="12" r="2.5"/><path d="M14 10h5M14 14h5"/></Base>; }
-function IconScale()     { return <Base><path d="M12 3v18M6 7h12"/><path d="M6 7l-3 6a4 4 0 0 0 6 0z"/><path d="M18 7l-3 6a4 4 0 0 0 6 0z"/></Base>; }
-function IconUsers()     { return <Base><circle cx="9" cy="8" r="3.5"/><path d="M2 20c.8-3.5 4-5.5 7-5.5s6.2 2 7 5.5"/><circle cx="17" cy="7" r="2.5"/><path d="M22 17.5c-.5-2.2-2.2-3.5-4.5-3.5"/></Base>; }
-function IconCard()      { return <Base><rect x="2.5" y="6" width="19" height="12" rx="2"/><path d="M2.5 10h19M6 15h4"/></Base>; }
-function IconStar()      { return <Base><path d="M12 3l2.7 5.7 6.3.9-4.6 4.3 1.1 6.2L12 17.3 6.5 20.1l1.1-6.2L3 9.6l6.3-.9z"/></Base>; }
-function IconCalendar()  { return <Base><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/><path d="M8 15l2 2 4-4"/></Base>; }
-function IconChart()     { return <Base><path d="M4 20V10M10 20V4M16 20v-8M22 20H2"/></Base>; }
-function IconGear()      { return <Base><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-1.8-.3 1.6 1.6 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.6 1.6 0 0 0-1-1.5 1.6 1.6 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.6 1.6 0 0 0 .3-1.8 1.6 1.6 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.6 1.6 0 0 0 1.5-1 1.6 1.6 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.6 1.6 0 0 0 1.8.3H9a1.6 1.6 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.6 1.6 0 0 0 1 1.5 1.6 1.6 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.6 1.6 0 0 0-.3 1.8V9a1.6 1.6 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.6 1.6 0 0 0-1.5 1z"/></Base>; }
-function IconMenu()      { return <Base><path d="M4 6h16M4 12h16M4 18h16"/></Base>; }
+function IconDashboard() { return <Base><rect x="3" y="3" width="7" height="9" rx="1.5" /><rect x="14" y="3" width="7" height="5" rx="1.5" /><rect x="14" y="12" width="7" height="9" rx="1.5" /><rect x="3" y="16" width="7" height="5" rx="1.5" /></Base>; }
+function IconId() { return <Base><rect x="3" y="5" width="18" height="14" rx="2" /><circle cx="9" cy="12" r="2.5" /><path d="M14 10h5M14 14h5" /></Base>; }
+function IconScale() { return <Base><path d="M12 3v18M6 7h12" /><path d="M6 7l-3 6a4 4 0 0 0 6 0z" /><path d="M18 7l-3 6a4 4 0 0 0 6 0z" /></Base>; }
+function IconUsers() { return <Base><circle cx="9" cy="8" r="3.5" /><path d="M2 20c.8-3.5 4-5.5 7-5.5s6.2 2 7 5.5" /><circle cx="17" cy="7" r="2.5" /><path d="M22 17.5c-.5-2.2-2.2-3.5-4.5-3.5" /></Base>; }
+function IconCard() { return <Base><rect x="2.5" y="6" width="19" height="12" rx="2" /><path d="M2.5 10h19M6 15h4" /></Base>; }
+function IconStar() { return <Base><path d="M12 3l2.7 5.7 6.3.9-4.6 4.3 1.1 6.2L12 17.3 6.5 20.1l1.1-6.2L3 9.6l6.3-.9z" /></Base>; }
+function IconCalendar() { return <Base><rect x="3" y="5" width="18" height="16" rx="2" /><path d="M3 10h18M8 3v4M16 3v4" /><path d="M8 15l2 2 4-4" /></Base>; }
+function IconChart() { return <Base><path d="M4 20V10M10 20V4M16 20v-8M22 20H2" /></Base>; }
+function IconGear() { return <Base><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-1.8-.3 1.6 1.6 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.6 1.6 0 0 0-1-1.5 1.6 1.6 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.6 1.6 0 0 0 .3-1.8 1.6 1.6 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.6 1.6 0 0 0 1.5-1 1.6 1.6 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.6 1.6 0 0 0 1.8.3H9a1.6 1.6 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.6 1.6 0 0 0 1 1.5 1.6 1.6 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.6 1.6 0 0 0-.3 1.8V9a1.6 1.6 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.6 1.6 0 0 0-1.5 1z" /></Base>; }
+function IconMenu() { return <Base><path d="M4 6h16M4 12h16M4 18h16" /></Base>; }
