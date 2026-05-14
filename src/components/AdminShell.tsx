@@ -36,7 +36,7 @@ const NAV: ReadonlyArray<NavItem> = [
   { href: '/dry-days', icon: <IconCalendar />, label: 'Dry Days', group: 'platform' },
   { href: '/analytics', icon: <IconChart />, label: 'Analytics', group: 'platform' },
   { href: '/settings', icon: <IconGear />, label: 'Admin Settings', group: 'system' },
-  { href: '/settings', icon: <IconGear />, label: 'Platform Settings', group: 'system' },
+  { href: '/platform-settings', icon: <IconGear />, label: 'Platform Settings', group: 'system' },
 
 ];
 
