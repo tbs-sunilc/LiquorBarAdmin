@@ -496,13 +496,38 @@ export const renewFeaturedListing = (id: number, payload: RenewFeaturedListingRe
 
 // ---- Analytics ----
 
+export type DailyGmvDto = { date: string; gmvInPaise: number };
+
+export type PlatformActivityDto = {
+  timeAgo: string;
+  event: string;
+  actor: string;
+  target: string;
+  status: string;
+  statusColor: string;
+};
+
 export type PlatformAnalyticsDto = {
   fromDate: string;
   toDate: string;
   gmvInPaise: number;
+  gmvGrowthPercent: number;
   transactionCount: number;
   uniqueCustomerCount: number;
+  customerGrowthCount: number;
   activeBarCount: number;
+  barGrowthCount: number;
+  activeWalletCount: number;
+  walletGrowthCount: number;
+  subscriptionMrrInPaise: number;
+  mrrGrowthPercent: number;
+  featuredListingRevenueInPaise: number;
+  activeFeaturedListings: number;
+  openDisputes: number;
+  disputesPastSla: number;
+  kycPendingCount: number;
+  paymentFailureCount: number;
+  dailyGmv: DailyGmvDto[];
   topBars: {
     barId: number; barName: string; city: string; stateCode: string;
     gmvInPaise: number; transactionCount: number;
@@ -511,6 +536,7 @@ export type PlatformAnalyticsDto = {
     city: string; stateCode: string; barCount: number; gmvInPaise: number;
     latitude: number | null; longitude: number | null;
   }[];
+  recentActivity: PlatformActivityDto[];
 };
 export const getAnalytics = (from?: string, to?: string) => {
   const q = new URLSearchParams();

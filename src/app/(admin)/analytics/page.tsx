@@ -49,9 +49,9 @@ export default function AnalyticsPage() {
         <>
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
             <StatCard index={0} tone="gold" label="GMV" value={formatInr(data.gmvInPaise)} icon="₹" />
-            <StatCard index={1} label="Transactions" value={data.transactionCount.toLocaleString('en-IN')} />
-            <StatCard index={2} label="Unique customers" value={data.uniqueCustomerCount.toLocaleString('en-IN')} />
-            <StatCard index={3} label="Active bars" value={data.activeBarCount.toLocaleString('en-IN')} />
+            <StatCard index={1} label="Transactions" value={(data.transactionCount ?? 0).toLocaleString('en-IN')} />
+            <StatCard index={2} label="Unique customers" value={(data.uniqueCustomerCount ?? 0).toLocaleString('en-IN')} />
+            <StatCard index={3} label="Active bars" value={(data.activeBarCount ?? 0).toLocaleString('en-IN')} />
           </div>
 
           <div className="grid lg:grid-cols-[1fr_22rem] gap-4">
@@ -132,7 +132,7 @@ function CityBubbleGrid({ cities }: { cities: PlatformAnalyticsDto['cityMap'] })
 }
 
 function formatInr(paise: number): string {
-  const rupees = paise / 100;
+  const rupees = (paise ?? 0) / 100;
   if (rupees >= 10_000_000) return `₹${(rupees / 10_000_000).toFixed(2)}Cr`;
   if (rupees >= 100_000) return `₹${(rupees / 100_000).toFixed(2)}L`;
   return '₹' + rupees.toLocaleString('en-IN', { maximumFractionDigits: 0 });
