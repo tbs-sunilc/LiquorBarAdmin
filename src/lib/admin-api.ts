@@ -333,6 +333,17 @@ export type AdminUserRowDto = {
   lastLoginAtUtc: string | null;
   createdAtUtc: string;
 };
+export type AdminUserTransactionDto = {
+  id: number;
+  walletId: number;
+  barName: string;
+  transactionType: string;
+  volumeMlDelta: number;
+  balanceAfterMl: number;
+  notes: string | null;
+  createdAtUtc: string;
+};
+
 export type AdminUserDetailDto = {
   id: number;
   mobileNumber: string;
@@ -340,7 +351,10 @@ export type AdminUserDetailDto = {
   email: string | null;
   gender: string | null;
   dateOfBirth: string | null;
+  profilePhotoUrl: string | null;
   kycStatus: string;
+  kycDocType: string | null;
+  kycDocUrl: string | null;
   kycRejectionReason: string | null;
   isActive: boolean;
   isBanned: boolean;
@@ -357,6 +371,7 @@ export type AdminUserDetailDto = {
     status: string;
     createdAtUtc: string;
   }[];
+  transactions: AdminUserTransactionDto[];
 };
 
 export const listUsers = (search?: string, skip = 0, take = 50) => {

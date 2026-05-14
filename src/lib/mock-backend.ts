@@ -246,11 +246,34 @@ function mkUser(
   return {
     id, mobileNumber: mobile, fullName: name, email,
     gender: null, dateOfBirth: null,
-    kycStatus: kyc, kycRejectionReason,
+    profilePhotoUrl: null,
+    kycStatus: kyc, kycDocType: 'Aadhaar', kycDocUrl: null, kycRejectionReason,
     isActive, isBanned,
-    lastLoginAtUtc: daysAgo(Math.min(daysSinceJoin, 3)),
+    lastLoginAtUtc: daysAgo(1),
     createdAtUtc: daysAgo(daysSinceJoin),
     wallets,
+    transactions: [
+      {
+        id: 1000 + id,
+        walletId: wallets[0]?.walletId ?? 0,
+        barName: wallets[0]?.barName ?? '—',
+        transactionType: 'Topup',
+        volumeMlDelta: 750,
+        balanceAfterMl: 750,
+        notes: 'Initial purchase',
+        createdAtUtc: daysAgo(daysSinceJoin - 1),
+      },
+      {
+        id: 1001 + id,
+        walletId: wallets[0]?.walletId ?? 0,
+        barName: wallets[0]?.barName ?? '—',
+        transactionType: 'Deduction',
+        volumeMlDelta: -60,
+        balanceAfterMl: 690,
+        notes: 'Double shot pour',
+        createdAtUtc: hoursAgo(2),
+      },
+    ],
   };
 }
 
