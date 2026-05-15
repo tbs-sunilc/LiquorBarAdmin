@@ -31,12 +31,27 @@
 
   /* Semantic */
   --color-success:        #3D7A5C;   /* aged sage */
+  --color-success-hi:     #4D926F;
+  --color-success-lo:     #2D5C45;
+  --color-success-rgb:    61, 122, 92;
   --color-success-tint:   #E4EFE8;
+
   --color-warn:           #B8860B;   /* shares gold — pairs with icon */
+  --color-warn-hi:        #D4A017;
+  --color-warn-lo:        #8A6508;
+  --color-warn-rgb:       184, 134, 11;
   --color-warn-tint:      #FDF5DC;
+
   --color-danger:         #9A2E2A;   /* burgundy */
+  --color-danger-hi:      #B53A35;
+  --color-danger-lo:      #7A2522;
+  --color-danger-rgb:     154, 46, 42;
   --color-danger-tint:    #F4E0DD;
+
   --color-info:           #2F4F7A;   /* deep slate blue */
+  --color-info-hi:        #3E68A0;
+  --color-info-lo:        #1F3552;
+  --color-info-rgb:       47, 79, 122;
   --color-info-tint:      #E0E8F2;
 
   /* Typography */

@@ -330,6 +330,7 @@ export type AdminUserRowDto = {
   email: string | null;
   kycStatus: string;
   isActive: boolean;
+  isBanned: boolean;
   lastLoginAtUtc: string | null;
   createdAtUtc: string;
 };

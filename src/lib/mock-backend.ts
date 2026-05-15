@@ -286,7 +286,7 @@ const usersListFn = (search?: string): AdminUserRowDto[] => {
       (u.fullName ?? '').toLowerCase().includes(q))
     .map((u) => ({
       id: u.id, mobileNumber: u.mobileNumber, fullName: u.fullName, email: u.email,
-      kycStatus: u.kycStatus, isActive: u.isActive,
+      kycStatus: u.kycStatus, isActive: u.isActive, isBanned: u.isBanned,
       lastLoginAtUtc: u.lastLoginAtUtc, createdAtUtc: u.createdAtUtc,
     }));
 };
@@ -337,9 +337,26 @@ const analyticsFn = (): PlatformAnalyticsDto => ({
   fromDate: ymd(daysAgo(30)),
   toDate:   ymd(new Date().toISOString()),
   gmvInPaise: 184_73_450_00,
+  gmvGrowthPercent: 12.4,
   transactionCount: 6_842,
   uniqueCustomerCount: 1_904,
+  customerGrowthCount: 142,
   activeBarCount: 47,
+  barGrowthCount: 3,
+  activeWalletCount: 2_150,
+  walletGrowthCount: 88,
+  subscriptionMrrInPaise: 2_45_000_00,
+  mrrGrowthPercent: 5.2,
+  featuredListingRevenueInPaise: 45_000_00,
+  activeFeaturedListings: 12,
+  openDisputes: 4,
+  disputesPastSla: 1,
+  kycPendingCount: 8,
+  paymentFailureCount: 2,
+  dailyGmv: Array.from({ length: 14 }).map((_, i) => ({
+    date: daysAgo(13 - i),
+    gmvInPaise: 4_00_000_00 + Math.random() * 2_00_000_00,
+  })),
   topBars: [
     { barId: 501, barName: 'The Gilded Pour',          city: 'Mumbai',    stateCode: 'MH', gmvInPaise: 28_50_000_00, transactionCount: 642 },
     { barId: 502, barName: 'Moonlight Tavern',         city: 'Bengaluru', stateCode: 'KA', gmvInPaise: 24_10_500_00, transactionCount: 587 },
@@ -361,6 +378,13 @@ const analyticsFn = (): PlatformAnalyticsDto => ({
     { city: 'Pune',      stateCode: 'MH', barCount: 3,  gmvInPaise: 6_50_000_00,  latitude: 18.52, longitude: 73.85 },
     { city: 'Lucknow',   stateCode: 'UP', barCount: 2,  gmvInPaise: 4_80_000_00,  latitude: 26.85, longitude: 80.95 },
     { city: 'Chennai',   stateCode: 'TN', barCount: 1,  gmvInPaise: 1_66_450_00,  latitude: 13.08, longitude: 80.27 },
+  ],
+  recentActivity: [
+    { timeAgo: '2m ago', event: 'New Bar Joined', actor: 'The Blue Frog', target: 'Mumbai', status: 'Pending', statusColor: 'warn' },
+    { timeAgo: '15m ago', event: 'Payment Success', actor: 'Aarav Sharma', target: '₹2,500 Topup', status: 'Captured', statusColor: 'success' },
+    { timeAgo: '1h ago', event: 'Dispute Resolved', actor: 'Admin: Priya', target: 'Dispute #1042', status: 'Refunded', statusColor: 'success' },
+    { timeAgo: '3h ago', event: 'KYC Approved', actor: 'Admin: Priya', target: 'Rahul Verma', status: 'Verified', statusColor: 'success' },
+    { timeAgo: '5h ago', event: 'Payment Failure', actor: 'System', target: '₹1,200 Topup', status: 'Failed', statusColor: 'danger' },
   ],
 });
 
