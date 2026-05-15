@@ -406,6 +406,48 @@ export type AdminSubscriptionRowDto = {
   failedPaymentCount: number;
   lastFailureReason: string | null;
 };
+
+export type PlanBreakdownDto = {
+  planName: string;
+  monthlyPriceInPaise: number;
+  barCount: number;
+  mrrInPaise: number;
+};
+
+export type RenewalCalendarDto = {
+  date: string;
+  barName: string;
+  planName: string;
+  amountInPaise: number;
+  status: string;
+};
+
+export type FailedSubscriptionDto = {
+  subscriptionId: number;
+  barName: string;
+  city: string;
+  planName: string;
+  amountInPaise: number;
+  failureDate: string;
+  failureReason: string;
+  graceDaysRemaining: number | null;
+  retryCount: number;
+};
+
+export type SubscriptionAnalyticsDto = {
+  monthlyRecurringRevenueInPaise: number;
+  mrrGrowthPercent: number;
+  totalActiveBars: number;
+  newBarsThisMonth: number;
+  paymentFailuresCount: number;
+  newFailuresThisWeek: number;
+  churnCount: number;
+  churnDetail: string;
+  planBreakdown: PlanBreakdownDto[];
+  renewalCalendar: RenewalCalendarDto[];
+  paymentFailures: FailedSubscriptionDto[];
+};
+
 export const listSubscriptions = (status?: string, skip = 0, take = 50) => {
   const q = new URLSearchParams({ skip: String(skip), take: String(take) });
   if (status) q.set('status', status);
@@ -416,6 +458,9 @@ export const listSubscriptions = (status?: string, skip = 0, take = 50) => {
 
 export const getSubscription = (id: number) =>
   request<AdminSubscriptionRowDto>(`/api/admin/subscriptions/${id}`);
+
+export const getSubscriptionAnalytics = () =>
+  request<SubscriptionAnalyticsDto>('/api/admin/subscriptions/analytics');
 
 // ---- Featured listings ----
 

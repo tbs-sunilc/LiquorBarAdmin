@@ -22,6 +22,7 @@ import type {
   LoginResponse,
   PlatformAnalyticsDto,
   ResolveDisputePayload,
+  SubscriptionAnalyticsDto,
 } from './admin-api';
 import { ApiError } from './admin-api';
 
@@ -569,6 +570,34 @@ export async function mockRequest<T>(path: string, init: RequestInit): Promise<T
   if (method === 'GET' && pathname === '/api/admin/subscriptions') {
     const status = q.get('status');
     return (status ? subsState.filter((s) => s.status === status) : subsState) as unknown as T;
+  }
+
+  if (method === 'GET' && pathname === '/api/admin/subscriptions/analytics') {
+    return {
+      monthlyRecurringRevenueInPaise: 16_80_000_00,
+      mrrGrowthPercent: 8.5,
+      totalActiveBars: 284,
+      newBarsThisMonth: 18,
+      paymentFailuresCount: 6,
+      newFailuresThisWeek: 2,
+      churnCount: 3,
+      churnDetail: '2 voluntary, 1 non-payment',
+      planBreakdown: [
+        { planName: 'Growth', monthlyPriceInPaise: 6_999_00, barCount: 162, mrrInPaise: 11_30_000_00 },
+        { planName: 'Starter', monthlyPriceInPaise: 2_999_00, barCount: 98, mrrInPaise: 2_90_000_00 },
+        { planName: 'Enterprise', monthlyPriceInPaise: 18_000_00, barCount: 24, mrrInPaise: 2_60_000_00 },
+      ],
+      renewalCalendar: [
+        { date: '2026-04-15', barName: 'Sky Lounge', planName: 'Growth', amountInPaise: 6_999_00, status: 'Auto-renew' },
+        { date: '2026-04-15', barName: 'The Cellar Wine Bar', planName: 'Growth', amountInPaise: 6_999_00, status: 'Failed - retry' },
+        { date: '2026-04-16', barName: 'Harbour Bar', planName: 'Starter', amountInPaise: 2_999_00, status: 'Auto-renew' },
+        { date: '2026-04-18', barName: 'Neon Nights Club', planName: 'Enterprise', amountInPaise: 18_000_00, status: 'Auto-renew' },
+      ],
+      paymentFailures: [
+        { subscriptionId: 5, barName: 'The Cellar Wine Bar', city: 'Bengaluru', planName: 'Growth', amountInPaise: 6_999_00, failureDate: '2026-04-13', failureReason: 'Card declined', graceDaysRemaining: 2, retryCount: 1 },
+        { subscriptionId: 6, barName: 'Urban Pub', city: 'Mumbai', planName: 'Starter', amountInPaise: 2_999_00, failureDate: '2026-04-12', failureReason: 'Insufficient funds', graceDaysRemaining: 1, retryCount: 1 },
+      ],
+    } as SubscriptionAnalyticsDto as unknown as T;
   }
 
   if (method === 'GET' && pathname === '/api/admin/featured-listings') {
