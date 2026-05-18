@@ -164,7 +164,7 @@ export default function AdminHomePage() {
       {/* Recent Activity */}
       <Card
         title="Recent Platform Activity"
-        action={<Link href="/logs" className="text-[0.7rem] font-bold uppercase tracking-widest text-muted hover:text-ink transition-colors border-b border-transparent hover:border-ink">View All Logs</Link>}
+        // action={<Link href="/logs" className="text-[0.7rem] font-bold uppercase tracking-widest text-muted hover:text-ink transition-colors border-b border-transparent hover:border-ink">View All Logs</Link>}
         className="overflow-hidden"
       >
         <div className="overflow-x-auto -mx-5">
@@ -209,14 +209,14 @@ function GmvBarChart({ data }: { data: DailyGmvDto[] }) {
         const height = (d.gmvInPaise / max) * 100;
         const day = new Date(d.date).toLocaleDateString('en-US', { weekday: 'short' });
         const isToday = i === last7.length - 1;
-        
+
         return (
           <div key={d.date} className="flex-1 flex flex-col items-center group relative h-full">
             <div className="absolute -top-8 bg-ink text-accent text-[0.65rem] font-bold py-1 px-2 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none shadow-xl z-10">
               {formatInr(d.gmvInPaise)}
             </div>
             <div className="flex-1 w-full flex items-end">
-              <div 
+              <div
                 className={`w-full rounded-t-sm transition-all duration-700 ease-out cursor-pointer hover:brightness-110 ${isToday ? 'bg-gradient-to-t from-[color:var(--color-success)] to-[color:var(--color-success-hi)] shadow-[0_0_20px_rgba(var(--color-success-rgb),0.3)]' : 'bg-[color:var(--color-accent-lo)]'}`}
                 style={{ height: `${height}%` }}
               />
@@ -244,8 +244,8 @@ function CityHorizontalBars({ cities }: { cities: PlatformAnalyticsDto['cityMap'
             <span className="text-accent-lo font-numeric">{formatInr(c.gmvInPaise)}</span>
           </div>
           <div className="h-1.5 w-full bg-strong/10 rounded-full overflow-hidden">
-            <div 
-              className="h-full bg-gradient-to-r from-[color:var(--color-accent-lo)] to-[color:var(--color-accent)] transition-all duration-1000 ease-in-out" 
+            <div
+              className="h-full bg-gradient-to-r from-[color:var(--color-accent-lo)] to-[color:var(--color-accent)] transition-all duration-1000 ease-in-out"
               style={{ width: `${(c.gmvInPaise / max) * 100}%` }}
             />
           </div>
