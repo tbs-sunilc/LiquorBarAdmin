@@ -614,5 +614,14 @@ export const addDryDay = (payload: {
   stateCode: string; dryDate: string; title: string;
   description?: string; isRecurringYearly?: boolean;
 }) => request<DryDayRowDto>('/api/admin/dry-days', { method: 'POST', body: JSON.stringify(payload) });
+
+export const updateDryDay = (id: number, payload: {
+  stateCode: string; dryDate: string; title: string;
+  description?: string; isRecurringYearly?: boolean;
+}) => request<void>(`/api/admin/dry-days/${id}`, { method: 'PUT', body: JSON.stringify(payload) });
+
+export const deleteDryDay = (id: number) =>
+  request<void>(`/api/admin/dry-days/${id}`, { method: 'DELETE' });
+
 export const setDryDayActive = (id: number, isActive: boolean) =>
   request<void>(`/api/admin/dry-days/${id}/active`, { method: 'PUT', body: JSON.stringify({ isActive }) });
