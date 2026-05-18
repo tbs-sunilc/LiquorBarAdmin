@@ -101,7 +101,7 @@ export default function UsersPage() {
                       ? <Badge tone="success" dot>Active</Badge>
                       : <Badge tone="neutral">Inactive</Badge>}
                   </td>
-                  <td className="text-right text-xs text-muted font-numeric tabular-nums">
+                  <td className="text-rig ht text-xs text-muted font-numeric tabular-nums">
                     {new Date(r.createdAtUtc).toLocaleDateString()}
                   </td>
                 </tr>
