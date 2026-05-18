@@ -16,8 +16,7 @@ import {
   ModalActions,
 } from '@/components/ui';
 
-// Static states for coverage panel
-const INDIAN_STATES = [
+const INITIAL_STATES = [
   { name: 'Maharashtra', code: 'MH' },
   { name: 'Karnataka', code: 'KA' },
   { name: 'Goa', code: 'GA' },
@@ -35,6 +34,7 @@ export default function DryDaysPage() {
   // Modals state
   const [showFormModal, setShowFormModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showAddStateModal, setShowAddStateModal] = useState(false);
   const [activeItem, setActiveItem] = useState<DryDayRowDto | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
@@ -44,6 +44,25 @@ export default function DryDaysPage() {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [recurring, setRecurring] = useState(false);
+
+  // Custom States
+  const [statesList, setStatesList] = useState(INITIAL_STATES);
+  const [newStateName, setNewStateName] = useState('');
+  const [newStateCode, setNewStateCode] = useState('');
+
+  useEffect(() => {
+    const savedStates = localStorage.getItem('custom_indian_states');
+    if (savedStates) {
+      try {
+        const parsed = JSON.parse(savedStates);
+        if (Array.isArray(parsed)) {
+          setStatesList([...INITIAL_STATES, ...parsed]);
+        }
+      } catch (e) {
+        console.error('Failed to parse custom states', e);
+      }
+    }
+  }, []);
 
   async function reload() {
     try {
@@ -155,7 +174,7 @@ export default function DryDaysPage() {
      return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
   };
   
-  const getStateName = (code: string) => INDIAN_STATES.find(s => s.code === code)?.name || code;
+  const getStateName = (code: string) => statesList.find(s => s.code === code)?.name || code;
 
   // Coverage status calculation
   const getCoverageStatus = (code: string) => {
@@ -164,6 +183,28 @@ export default function DryDaysPage() {
       const hasState = activeRows.some(r => r.stateCode === code);
       if (hasNational || hasState) return 'Configured';
       return 'Not configured';
+  };
+
+  const handleAddStateSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newStateName.trim() || !newStateCode.trim()) return;
+    
+    const newCode = newStateCode.trim().toUpperCase();
+    if (statesList.some(s => s.code === newCode)) {
+      setError('State code already exists.');
+      return;
+    }
+
+    const newCustomState = { name: newStateName.trim(), code: newCode };
+    const updatedCustomStates = [...statesList.filter(s => !INITIAL_STATES.some(is => is.code === s.code)), newCustomState];
+    
+    localStorage.setItem('custom_indian_states', JSON.stringify(updatedCustomStates));
+    setStatesList([...INITIAL_STATES, ...updatedCustomStates]);
+    
+    setShowAddStateModal(false);
+    setNewStateName('');
+    setNewStateCode('');
+    setError(null);
   };
 
   return (
@@ -240,7 +281,7 @@ export default function DryDaysPage() {
             </div>
             <div className="p-4 bg-white flex-1">
                 <ul className="divide-y divide-gray-100">
-                {INDIAN_STATES.map((state) => {
+                {statesList.map((state) => {
                     const status = getCoverageStatus(state.code);
                     return (
                     <li key={state.code} className="flex items-center justify-between py-3 text-sm">
@@ -257,7 +298,7 @@ export default function DryDaysPage() {
                 </ul>
             </div>
             <div className="p-4 bg-gray-50 border-t border-[#e5e7eb]">
-               <button className="w-full btn btn-primary bg-[#4f46e5] border-none text-white hover:bg-[#4338ca] shadow-sm">Configure New State</button>
+               <button onClick={() => setShowAddStateModal(true)} className="w-full btn btn-primary bg-[#4f46e5] border-none text-white hover:bg-[#4338ca] shadow-sm">Configure New State</button>
             </div>
           </Card>
         </div>
@@ -269,9 +310,9 @@ export default function DryDaysPage() {
             <Field label="State / Region" htmlFor="modal-state">
               <select id="modal-state" value={stateCode} onChange={e => setStateCode(e.target.value)} className="input">
                  <option value="ALL">All States (National)</option>
-                 {INDIAN_STATES.map(s => <option key={s.code} value={s.code}>{s.name} ({s.code})</option>)}
+                 {statesList.map(s => <option key={s.code} value={s.code}>{s.name} ({s.code})</option>)}
                  {/* For cases where state isn't in static list but was saved in db */}
-                 {activeItem && activeItem.stateCode !== 'ALL' && !INDIAN_STATES.some(s => s.code === activeItem.stateCode) && (
+                 {activeItem && activeItem.stateCode !== 'ALL' && !statesList.some(s => s.code === activeItem.stateCode) && (
                      <option value={activeItem.stateCode}>{activeItem.stateCode} (Other)</option>
                  )}
               </select>
@@ -313,6 +354,26 @@ export default function DryDaysPage() {
           <div className="mt-6">
             <ModalActions busy={submitting} onCancel={() => setShowDeleteModal(false)} onConfirm={handleDelete} confirmLabel="Remove" tone="danger" />
           </div>
+        </Modal>
+      )}
+
+      {showAddStateModal && (
+        <Modal title="Add State" onClose={() => setShowAddStateModal(false)}>
+          <form id="addStateForm" onSubmit={handleAddStateSubmit} className="grid gap-4 mt-4">
+            <Field label="State Name" htmlFor="modal-state-name">
+              <input id="modal-state-name" required value={newStateName} onChange={e => setNewStateName(e.target.value)} maxLength={100} className="input" placeholder="e.g. Gujarat" />
+            </Field>
+            <Field label="State Code" htmlFor="modal-state-code">
+              <input id="modal-state-code" required value={newStateCode} onChange={e => setNewStateCode(e.target.value)} maxLength={5} className="input" placeholder="e.g. GJ" />
+            </Field>
+          </form>
+          <ModalActions busy={false} onCancel={() => setShowAddStateModal(false)} onConfirm={() => {
+              const form = document.getElementById('addStateForm');
+              if (form) {
+                  const event = new Event('submit', { cancelable: true, bubbles: true });
+                  form.dispatchEvent(event);
+              }
+          }} confirmLabel="Add State" />
         </Modal>
       )}
     </>
