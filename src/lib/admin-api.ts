@@ -188,6 +188,30 @@ export const rejectKyc = (userId: number, reason: string, permanent: boolean) =>
 export const resubmitKyc = (userId: number, reason: string) =>
   request<KycReviewDetailDto>(`/api/admin/kyc/${userId}/resubmit`, { method: 'POST', body: JSON.stringify({ reason }) });
 
+// ---- Platform settings (global) ----
+export type PlatformSettingsDto = {
+  minAgeRequirement: number;
+  autoApproveKyc: boolean;
+  kycReviewSlaHours: number;
+
+  platformCommissionRatePct: number;
+  maxSingleWalletValue: number;
+  defaultWalletExpiryPolicy: string | null;
+  giftWalletRefundWindowDays: number;
+
+  gracePeriodAfterPaymentFailureDays: number;
+  autoRetryAttempts: number;
+  blockNewWalletPurchasesDuringGrace: boolean;
+
+  disputeResolutionSlaHours: number;
+  autoEscalateAfterBreachHours: number;
+  allowAdminWalletReversal: boolean;
+};
+
+export const getPlatformSettings = () => request<PlatformSettingsDto>(`/api/admin/platform-settings`);
+export const savePlatformSettings = (payload: Partial<PlatformSettingsDto>) =>
+  request<PlatformSettingsDto>(`/api/admin/platform-settings`, { method: 'PUT', body: JSON.stringify(payload) });
+
 // ---- Bar KYC ----
 
 export type BarKycQueueRowDto = {

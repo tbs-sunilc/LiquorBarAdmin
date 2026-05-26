@@ -490,6 +490,26 @@ const fakeSession = (): AdminSession => ({
   admin: adminProfile,
 });
 
+// Platform settings (mocked in-memory)
+let platformSettingsState = {
+  minAgeRequirement: 18,
+  autoApproveKyc: false,
+  kycReviewSlaHours: 48,
+
+  platformCommissionRatePct: 0,
+  maxSingleWalletValue: 20000,
+  defaultWalletExpiryPolicy: null,
+  giftWalletRefundWindowDays: 30,
+
+  gracePeriodAfterPaymentFailureDays: 5,
+  autoRetryAttempts: 3,
+  blockNewWalletPurchasesDuringGrace: true,
+
+  disputeResolutionSlaHours: 48,
+  autoEscalateAfterBreachHours: 72,
+  allowAdminWalletReversal: true,
+};
+
 /* ─── Dispatcher ─────────────────────────────────── */
 
 const delay = (ms = 180) => new Promise((r) => setTimeout(r, ms));
@@ -700,6 +720,14 @@ export async function mockRequest<T>(path: string, init: RequestInit): Promise<T
     };
     dryDaysState.unshift(row);
     return row as unknown as T;
+  }
+  // Platform settings
+  if (method === 'GET' && pathname === '/api/admin/platform-settings') {
+    return platformSettingsState as unknown as T;
+  }
+  if ((method === 'PUT' || method === 'POST') && pathname === '/api/admin/platform-settings') {
+    Object.assign(platformSettingsState, body as Partial<typeof platformSettingsState>);
+    return platformSettingsState as unknown as T;
   }
   const dryActiveMatch = /^\/api\/admin\/dry-days\/(\d+)\/active$/.exec(pathname);
   if (dryActiveMatch && method === 'PUT') {
