@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Image from 'next/image';
 import { useParams, useRouter } from 'next/navigation';
 import {
   BackLink,
@@ -64,6 +65,17 @@ function verdictBadge(v: DocVerdict, missing: boolean) {
     Unclear: { tone: 'warn',    label: '? Unclear' },
   };
   const { tone, label } = map[v];
+  return <Badge tone={tone}>{label}</Badge>;
+}
+
+function statusBadge(status: string) {
+  const map: Record<string, { tone: BadgeTone; label: string }> = {
+    PendingReview:    { tone: 'warn',    label: 'Pending Review' },
+    Approved:         { tone: 'success', label: 'Approved' },
+    Rejected:         { tone: 'danger',  label: 'Rejected' },
+    ResubmitRequested:{ tone: 'neutral', label: 'Resubmit Requested' },
+  };
+  const { tone, label } = map[status] ?? { tone: 'neutral' as BadgeTone, label: status };
   return <Badge tone={tone}>{label}</Badge>;
 }
 
@@ -314,12 +326,18 @@ export default function BarKycDetailPage() {
           <h1 className="font-display text-2xl text-ink mt-1">
             KYC Review — {bar.businessName}
           </h1>
-          <p className="text-sm text-muted mt-1">
-            {bar.city}, {bar.stateCode} · {Math.floor(bar.hoursWaiting)}h waiting
+          <div className="mt-2 flex flex-wrap items-center gap-2">
+            {statusBadge(bar.kycStatus)}
+            <span className="text-sm text-muted">
+              {bar.city}, {bar.stateCode} · {Math.floor(bar.hoursWaiting)}h waiting
+            </span>
             {bar.slaBreached && (
-              <span className="ml-2 text-[color:var(--color-danger)]">⚠ SLA Breached</span>
+              <span className="text-sm font-semibold text-[color:var(--color-danger)]">⚠ SLA Breached</span>
             )}
-          </p>
+          </div>
+          {bar.rejectionReason && (
+            <p className="text-sm text-danger mt-2">Rejection reason: {bar.rejectionReason}</p>
+          )}
         </div>
 
         {!closed && (
@@ -458,17 +476,35 @@ export default function BarKycDetailPage() {
             })}
 
             {/* Photo gallery previews */}
-            {bar.photoGallerySignedUrls.length > 1 && (
-              <div>
-                <p className="text-xs text-muted mb-2">Photo Gallery ({bar.photoGallerySignedUrls.length} photos)</p>
-                <div className="flex gap-2 flex-wrap">
-                  {bar.photoGallerySignedUrls.slice(1).map((url, i) => (
-                    <a key={i} href={url} target="_blank" rel="noopener noreferrer" className="btn btn-sm btn-ghost text-xs">
-                      Photo {i + 2}
+            {bar.photoGallerySignedUrls.length > 0 ? (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <p className="text-xs text-muted">Photo Gallery ({bar.photoGallerySignedUrls.length} photos)</p>
+                  <span className="text-xs text-muted">Click any image to open full size</span>
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                  {bar.photoGallerySignedUrls.map((url, i) => (
+                    <a
+                      key={`${url}-${i}`}
+                      href={url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="block overflow-hidden rounded-xl border border-hairline bg-surface"
+                    >
+                      <Image
+                        src={url}
+                        alt={`Bar photo ${i + 1}`}
+                        width={400}
+                        height={280}
+                        unoptimized
+                        className="h-28 w-full object-cover transition duration-150 hover:scale-[1.02]"
+                      />
                     </a>
                   ))}
                 </div>
               </div>
+            ) : (
+              <p className="text-xs text-muted">No bar photos uploaded yet.</p>
             )}
           </div>
         </Card>
