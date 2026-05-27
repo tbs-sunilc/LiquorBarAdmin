@@ -142,7 +142,7 @@ export default function AdminHomePage() {
         />
         <StatCard
           index={7}
-          label="KYC Pending"
+          label=" Bar KYC Pending"
           value={(data.kycPendingCount ?? 0).toLocaleString('en-IN')}
           delta={{ value: `Awaiting review`, positive: true }}
           tone="warn"
