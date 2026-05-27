@@ -85,7 +85,9 @@ export default function AdminHomePage() {
               {data.kycPendingCount} bar KYC applications pending &middot; {data.openDisputes} open disputes &middot; {data.paymentFailureCount} subscription payment failures
             </p>
           </div>
-          <button className="btn btn-primary bg-[color:var(--color-danger)] hover:bg-[color:var(--color-danger)]/90 text-white text-xs px-4 py-2">Review Now &rarr;</button>
+          <Link href="/bar-kyc" className="btn btn-primary bg-[color:var(--color-danger)] hover:bg-[color:var(--color-danger)]/90 text-white text-xs px-4 py-2">
+            Review Now &rarr;
+          </Link>
         </div>
       )}
 
