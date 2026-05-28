@@ -27,6 +27,7 @@ export default function AdminHomePage() {
   const [data, setData] = useState<PlatformAnalyticsDto | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showBroadcastInfo, setShowBroadcastInfo] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -67,10 +68,14 @@ export default function AdminHomePage() {
         />
         <div className="flex items-center gap-3">
           <Badge tone="success" dot>All systems operational</Badge>
-          <button className="btn btn-ghost bg-white shadow-sm text-xs font-semibold px-3 py-1.5 flex items-center gap-1.5 border border-[color:var(--color-border)]">
+          <Link href="/analytics" className="btn btn-ghost bg-white shadow-sm text-xs font-semibold px-3 py-1.5 flex items-center gap-1.5 border border-[color:var(--color-border)]">
             <span>⚕</span> Health Report
-          </button>
-          <button className="btn btn-primary text-xs py-1.5 px-4 flex items-center gap-2">
+          </Link>
+          <button
+            type="button"
+            onClick={() => setShowBroadcastInfo(true)}
+            className="btn btn-primary text-xs py-1.5 px-4 flex items-center gap-2"
+          >
             <span>📣</span> Broadcast
           </button>
         </div>
@@ -196,6 +201,65 @@ export default function AdminHomePage() {
           </table>
         </div>
       </Card>
+
+      {showBroadcastInfo && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/65 px-4 py-6">
+          <div className="w-full max-w-xl rounded-xl border border-[color:var(--color-border)] bg-surface shadow-2xl">
+            <div className="flex items-start justify-between gap-4 border-b border-[color:var(--color-border)] px-6 py-5">
+              <div>
+                <p className="text-[0.65rem] font-bold uppercase tracking-[0.24em] text-muted">Planned feature</p>
+                <h2 className="mt-1 font-display text-2xl font-semibold text-ink">Broadcast Center</h2>
+                <p className="mt-2 text-sm text-muted">
+                  This will let admins send platform announcements from one controlled composer.
+                </p>
+              </div>
+              <button
+                type="button"
+                aria-label="Close broadcast details"
+                onClick={() => setShowBroadcastInfo(false)}
+                className="rounded-md px-2 py-1 text-xl leading-none text-muted hover:bg-strong/10 hover:text-ink"
+              >
+                x
+              </button>
+            </div>
+
+            <div className="space-y-5 px-6 py-5">
+              <div className="grid gap-3 sm:grid-cols-2">
+                <FeaturePreview title="Audience" body="All users, bar owners, active bars, inactive users, or city-based segments." />
+                <FeaturePreview title="Channels" body="In-app notification first, with optional push and WhatsApp when backend support is enabled." />
+                <FeaturePreview title="Message" body="Admin enters title, short body, optional action link, and preview text before sending." />
+                <FeaturePreview title="Safety" body="Requires confirmation, recipient estimate, audit log, and delivery status after send." />
+              </div>
+
+              <div className="rounded-lg border border-dashed border-[color:var(--color-border)] bg-strong/5 p-4">
+                <p className="text-sm font-semibold text-ink">Current status</p>
+                <p className="mt-1 text-sm text-muted">
+                  Broadcast sending is not wired to the backend yet, so this button only shows the planned workflow for now.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex justify-end border-t border-[color:var(--color-border)] px-6 py-4">
+              <button
+                type="button"
+                onClick={() => setShowBroadcastInfo(false)}
+                className="btn btn-primary px-4 py-2 text-xs font-semibold"
+              >
+                Got it
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function FeaturePreview({ title, body }: { title: string; body: string }) {
+  return (
+    <div className="rounded-lg border border-[color:var(--color-border)] bg-white p-4">
+      <p className="text-sm font-semibold text-ink">{title}</p>
+      <p className="mt-1 text-xs leading-5 text-muted">{body}</p>
     </div>
   );
 }
