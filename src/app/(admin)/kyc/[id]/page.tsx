@@ -14,9 +14,11 @@ import {
   ApiError,
   approveKyc,
   getKycDetail,
+  getUser,
   listKycQueue,
   rejectKyc,
   resubmitKyc,
+  type AdminUserDetailDto,
   type KycReviewDetailDto,
 } from '@/lib/admin-api';
 import {
@@ -33,11 +35,27 @@ type Verdict = 'Match' | 'Mismatch' | 'Unclear';
 type ModalState = 'approve' | 'reject' | 'resubmit' | null;
 
 export default function KycReviewPage() {
+  const getImageUrl = (url?: string | null) => {
+    if (!url) return '';
+    let normalizedUrl = url.replace(/\\/g, '/');
+    if (normalizedUrl.startsWith('http://') || normalizedUrl.startsWith('https://')) return normalizedUrl;
+    
+    // The backend serves files from the "User Documents" folder, so we need to prepend it
+    // if the stored path is just a relative path like "kyc/3040/..."
+    if (!normalizedUrl.startsWith('User Documents/') && !normalizedUrl.startsWith('/User Documents/')) {
+      normalizedUrl = `User Documents/${normalizedUrl.startsWith('/') ? normalizedUrl.slice(1) : normalizedUrl}`;
+    }
+
+    const base = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:5000';
+    return `${base}/${normalizedUrl.startsWith('/') ? normalizedUrl.slice(1) : normalizedUrl}`;
+  };
+
   const params = useParams<{ id: string }>();
   const userId = Number(params.id);
   const router = useRouter();
 
   const [detail, setDetail] = useState<KycReviewDetailDto | null>(null);
+  const [userProfile, setUserProfile] = useState<AdminUserDetailDto | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -57,8 +75,12 @@ export default function KycReviewPage() {
     if (!Number.isFinite(userId)) return;
     (async () => {
       try {
-        const d = await getKycDetail(userId);
+        const [d, u] = await Promise.all([
+          getKycDetail(userId),
+          getUser(userId).catch(() => null)
+        ]);
         setDetail(d);
+        if (u) setUserProfile(u);
         if (d.dateOfBirth) setDob(d.dateOfBirth);
       } catch (err) {
         setError(err instanceof ApiError ? err.message : 'Failed to load');
@@ -132,6 +154,9 @@ async function approveAndSyncBar(approveFn: () => Promise<KycReviewDetailDto>) {
 
   const closed = detail.kycStatus === 'Approved' || detail.kycStatus === 'PermanentlyRejected';
 
+  const docUrl = detail.kycDocSignedUrl || userProfile?.kycDocUrl;
+  const docType = detail.kycDocType || userProfile?.kycDocType;
+
   return (
     <>
       <BackLink href="/kyc">Back to queue</BackLink>
@@ -149,32 +174,34 @@ async function approveAndSyncBar(approveFn: () => Promise<KycReviewDetailDto>) {
       </header>
 
       <div className="grid lg:grid-cols-[1fr_22rem] gap-6 mb-6">
-        <Card
-          title="Document"
-          action={
-            detail.kycDocSignedUrl && (
-              <a href={detail.kycDocSignedUrl} target="_blank" rel="noreferrer"
-                 className="text-xs font-semibold uppercase tracking-wider text-accent-lo hover:text-accent-hi">
-                Open in new tab ↗
-              </a>
-            )
-          }
-        >
-          <div className="-mx-5 -mb-5">
-            <div className="bg-ivory-2 aspect-[4/3] flex items-center justify-center border-y border-hairline">
-              {detail.kycDocSignedUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={detail.kycDocSignedUrl} alt={`KYC document — ${detail.kycDocType ?? 'document'}`} className="max-h-full max-w-full object-contain" />
-              ) : (
-                <span className="text-muted text-sm">Document not uploaded</span>
-              )}
+        <div className="space-y-6">
+          <Card
+            title="Document"
+            action={
+              docUrl && (
+                <a href={getImageUrl(docUrl)} target="_blank" rel="noreferrer"
+                   className="text-xs font-semibold uppercase tracking-wider text-accent-lo hover:text-accent-hi">
+                  Open in new tab ↗
+                </a>
+              )
+            }
+          >
+            <div className="-mx-5 -mb-5">
+              <div className="bg-ivory-2 aspect-[4/3] flex items-center justify-center border-y border-hairline">
+                {docUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={getImageUrl(docUrl)} alt={`KYC document — ${docType ?? 'document'}`} className="max-h-full max-w-full object-contain" />
+                ) : (
+                  <span className="text-muted text-sm">Document not uploaded</span>
+                )}
+              </div>
+              <div className="px-5 py-4 text-xs text-muted flex flex-wrap gap-x-6 gap-y-1">
+                <span>Type: <strong className="text-ink">{docType ?? '—'}</strong></span>
+                <span>Submitted: <span className="font-numeric">{detail.kycSubmittedAtUtc ? new Date(detail.kycSubmittedAtUtc).toLocaleString() : '—'}</span></span>
+              </div>
             </div>
-            <div className="px-5 py-4 text-xs text-muted flex flex-wrap gap-x-6 gap-y-1">
-              <span>Type: <strong className="text-ink">{detail.kycDocType ?? '—'}</strong></span>
-              <span>Submitted: <span className="font-numeric">{detail.kycSubmittedAtUtc ? new Date(detail.kycSubmittedAtUtc).toLocaleString() : '—'}</span></span>
-            </div>
-          </div>
-        </Card>
+          </Card>
+        </div>
 
         <Card title="Verification checklist">
           <div className="space-y-3">

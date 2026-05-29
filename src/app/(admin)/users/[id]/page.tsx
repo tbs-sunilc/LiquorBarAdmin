@@ -40,6 +40,19 @@ export default function UserDetailPage() {
   const [banConfirmation, setBanConfirmation] = useState('');
   const [busy, setBusy] = useState(false);
 
+  const getImageUrl = (url?: string | null) => {
+    if (!url) return '';
+    let normalizedUrl = url.replace(/\\/g, '/');
+    if (normalizedUrl.startsWith('http://') || normalizedUrl.startsWith('https://')) return normalizedUrl;
+    
+    if (!normalizedUrl.startsWith('User Documents/') && !normalizedUrl.startsWith('/User Documents/')) {
+      normalizedUrl = `User Documents/${normalizedUrl.startsWith('/') ? normalizedUrl.slice(1) : normalizedUrl}`;
+    }
+
+    const base = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:5000';
+    return `${base}/${normalizedUrl.startsWith('/') ? normalizedUrl.slice(1) : normalizedUrl}`;
+  };
+
   useEffect(() => {
     if (!Number.isFinite(userId)) return;
     (async () => {
@@ -83,7 +96,7 @@ export default function UserDetailPage() {
         <div className="flex items-center gap-5">
           <div className="w-20 h-20 rounded-2xl bg-accent-lo flex items-center justify-center text-accent-hi text-2xl font-bold border border-accent/10 overflow-hidden shadow-sm">
             {u.profilePhotoUrl ? (
-              <img src={u.profilePhotoUrl} alt={u.fullName ?? ''} className="w-full h-full object-cover" />
+              <img src={getImageUrl(u.profilePhotoUrl)} alt={u.fullName ?? ''} className="w-full h-full object-cover" />
             ) : (
               (u.fullName?.[0] ?? u.mobileNumber.slice(-2)).toUpperCase()
             )}
@@ -124,7 +137,7 @@ export default function UserDetailPage() {
                 <div className="flex justify-between items-center py-0.5 border-b border-ink/5 last:border-0">
                   <span className="text-xs text-muted">KYC File</span>
                   {u.kycDocUrl ? (
-                    <a href={u.kycDocUrl} target="_blank" rel="noopener" className="text-xs font-semibold text-accent hover:underline">
+                    <a href={getImageUrl(u.kycDocUrl)} target="_blank" rel="noopener" className="text-xs font-semibold text-accent hover:underline">
                       View Document →
                     </a>
                   ) : (
