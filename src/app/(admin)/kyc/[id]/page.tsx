@@ -21,6 +21,7 @@ import {
   type AdminUserDetailDto,
   type KycReviewDetailDto,
 } from '@/lib/admin-api';
+import { getDocumentUrl } from '@/lib/document-url';
 import {
   BackLink,
   Badge,
@@ -35,21 +36,6 @@ type Verdict = 'Match' | 'Mismatch' | 'Unclear';
 type ModalState = 'approve' | 'reject' | 'resubmit' | null;
 
 export default function KycReviewPage() {
-  const getImageUrl = (url?: string | null) => {
-    if (!url) return '';
-    let normalizedUrl = url.replace(/\\/g, '/');
-    if (normalizedUrl.startsWith('http://') || normalizedUrl.startsWith('https://')) return normalizedUrl;
-    
-    // The backend serves files from the "User Documents" folder, so we need to prepend it
-    // if the stored path is just a relative path like "kyc/3040/..."
-    if (!normalizedUrl.startsWith('User Documents/') && !normalizedUrl.startsWith('/User Documents/')) {
-      normalizedUrl = `User Documents/${normalizedUrl.startsWith('/') ? normalizedUrl.slice(1) : normalizedUrl}`;
-    }
-
-    const base = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:5000';
-    return `${base}/${normalizedUrl.startsWith('/') ? normalizedUrl.slice(1) : normalizedUrl}`;
-  };
-
   const params = useParams<{ id: string }>();
   const userId = Number(params.id);
   const router = useRouter();
@@ -179,7 +165,7 @@ async function approveAndSyncBar(approveFn: () => Promise<KycReviewDetailDto>) {
             title="Document"
             action={
               docUrl && (
-                <a href={getImageUrl(docUrl)} target="_blank" rel="noreferrer"
+                <a href={getDocumentUrl(docUrl)} target="_blank" rel="noreferrer"
                    className="text-xs font-semibold uppercase tracking-wider text-accent-lo hover:text-accent-hi">
                   Open in new tab ↗
                 </a>
@@ -190,7 +176,7 @@ async function approveAndSyncBar(approveFn: () => Promise<KycReviewDetailDto>) {
               <div className="bg-ivory-2 aspect-[4/3] flex items-center justify-center border-y border-hairline">
                 {docUrl ? (
                   // eslint-disable-next-line @next/next/no-img-element
-                  <img src={getImageUrl(docUrl)} alt={`KYC document — ${docType ?? 'document'}`} className="max-h-full max-w-full object-contain" />
+                  <img src={getDocumentUrl(docUrl)} alt={`KYC document — ${docType ?? 'document'}`} className="max-h-full max-w-full object-contain" />
                 ) : (
                   <span className="text-muted text-sm">Document not uploaded</span>
                 )}
