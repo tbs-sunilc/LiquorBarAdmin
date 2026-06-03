@@ -491,7 +491,7 @@ const fakeSession = (): AdminSession => ({
 });
 
 // Platform settings (mocked in-memory)
-let platformSettingsState = {
+const platformSettingsState = {
   minAgeRequirement: 18,
   autoApproveKyc: false,
   kycReviewSlaHours: 48,

@@ -212,6 +212,51 @@ export const getPlatformSettings = () => request<PlatformSettingsDto>(`/api/admi
 export const savePlatformSettings = (payload: Partial<PlatformSettingsDto>) =>
   request<PlatformSettingsDto>(`/api/admin/platform-settings`, { method: 'PUT', body: JSON.stringify(payload) });
 
+// ---- Email templates ----
+export type EmailTemplateRowDto = {
+  id: number;
+  type: string;
+  subject: string;
+  text: string;
+  createdBy: string | null;
+  createdDate: string;
+  updatedBy: string | null;
+  updatedDate: string | null;
+  isDelete: boolean;
+  isActive: boolean;
+};
+
+export type EmailTemplateUpsertPayload = {
+  type: string;
+  subject: string;
+  text: string;
+  isActive: boolean;
+};
+
+export const listEmailTemplates = (includeDeleted = true) => {
+  const q = new URLSearchParams();
+  if (includeDeleted) q.set('includeDeleted', 'true');
+  const suffix = q.toString() ? `?${q.toString()}` : '';
+  return request<EmailTemplateRowDto[]>(`/api/admin/email-templates${suffix}`);
+};
+
+export const createEmailTemplate = (payload: EmailTemplateUpsertPayload) =>
+  request<EmailTemplateRowDto>('/api/admin/email-templates', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+
+export const updateEmailTemplate = (id: number, payload: EmailTemplateUpsertPayload) =>
+  request<EmailTemplateRowDto>(`/api/admin/email-templates/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(payload),
+  });
+
+export const softDeleteEmailTemplate = (id: number) =>
+  request<EmailTemplateRowDto>(`/api/admin/email-templates/${id}`, {
+    method: 'DELETE',
+  });
+
 // ---- Bar KYC ----
 
 export type BarKycQueueRowDto = {
