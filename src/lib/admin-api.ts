@@ -694,3 +694,33 @@ export const deleteDryDay = (id: number) =>
 
 export const setDryDayActive = (id: number, isActive: boolean) =>
   request<void>(`/api/admin/dry-days/${id}/active`, { method: 'PUT', body: JSON.stringify({ isActive }) });
+
+// ---- Master categories ----
+
+export type MasterCategoryDto = {
+  id: number;
+  name: string;
+  isActive: boolean;
+  catalogueItemCount: number;
+};
+
+export const listMasterCategories = () =>
+  request<MasterCategoryDto[]>('/api/admin/master-categories');
+
+export const createMasterCategory = (name: string) =>
+  request<MasterCategoryDto>('/api/admin/master-categories', {
+    method: 'POST',
+    body: JSON.stringify({ name }),
+  });
+
+export const updateMasterCategory = (
+  id: number,
+  payload: { name: string; isActive: boolean },
+) =>
+  request<MasterCategoryDto>(`/api/admin/master-categories/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(payload),
+  });
+
+export const deleteMasterCategory = (id: number) =>
+  request<void>(`/api/admin/master-categories/${id}`, { method: 'DELETE' });
