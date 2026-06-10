@@ -86,7 +86,7 @@ export default function FeaturedListingsPage() {
 
     if (modal.kind === 'edit') {
       setForm(fromRow(modal.row));
-      pushToast('Featured listing editor opened');
+      //pushToast('Featured listing editor opened');
     }
   }, [modal]);
 
@@ -151,7 +151,7 @@ export default function FeaturedListingsPage() {
           status: form.status,
         });
         setRows((current) => current.map((row) => (row.id === updated.id ? { ...row, ...updated } : row)));
-        pushToast('Featured listing editor opened');
+        //pushToast('Featured listing editor opened');
       } else {
         const created = await createFeaturedListing(selectedBarId, {
           slotType: form.slotType,
