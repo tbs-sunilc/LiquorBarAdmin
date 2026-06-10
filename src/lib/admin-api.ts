@@ -794,3 +794,76 @@ export const updateMasterCategory = (
 
 export const deleteMasterCategory = (id: number) =>
   request<void>(`/api/admin/master-categories/${id}`, { method: 'DELETE' });
+
+// ---- Admin Bar Listing (for bar picker) ----
+
+export type AdminBarSummaryDto = {
+  id: number;
+  businessName: string;
+  city: string;
+  stateCode: string;
+};
+
+export const listAdminBars = (search?: string, skip = 0, take = 100) => {
+  const q = new URLSearchParams({ skip: String(skip), take: String(take) });
+  if (search) q.set('search', search);
+  return request<AdminBarSummaryDto[]>(`/api/admin/bars?${q.toString()}`);
+};
+
+// ---- Admin Bar Inventory Categories ----
+
+export type AdminBarInventoryCategoryDto = {
+  id: number;
+  barId: number;
+  name: string;
+  displayOrder: number;
+  bottleCount: number;
+  isActive: boolean;
+};
+
+export type CreateAdminBarInventoryCategoryRequest = {
+  name: string;
+  displayOrder?: number;
+};
+
+export type UpdateAdminBarInventoryCategoryRequest = {
+  name: string;
+  displayOrder?: number;
+};
+
+export const listAdminBarInventoryCategories = (barId: number) =>
+  request<AdminBarInventoryCategoryDto[]>(`/api/admin/bar-inventory-categories/${barId}`);
+
+export const createAdminBarInventoryCategory = (
+  barId: number,
+  payload: CreateAdminBarInventoryCategoryRequest,
+) =>
+  request<AdminBarInventoryCategoryDto>(`/api/admin/bar-inventory-categories/${barId}`, {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+
+export const updateAdminBarInventoryCategory = (
+  barId: number,
+  categoryId: number,
+  payload: UpdateAdminBarInventoryCategoryRequest,
+) =>
+  request<AdminBarInventoryCategoryDto>(`/api/admin/bar-inventory-categories/${barId}/${categoryId}`, {
+    method: 'PUT',
+    body: JSON.stringify(payload),
+  });
+
+export const setAdminBarInventoryCategoryActive = (
+  barId: number,
+  categoryId: number,
+  isActive: boolean,
+) =>
+  request<AdminBarInventoryCategoryDto>(
+    `/api/admin/bar-inventory-categories/${barId}/${categoryId}/active`,
+    { method: 'PUT', body: JSON.stringify({ isActive }) },
+  );
+
+export const deleteAdminBarInventoryCategory = (barId: number, categoryId: number) =>
+  request<void>(`/api/admin/bar-inventory-categories/${barId}/${categoryId}`, {
+    method: 'DELETE',
+  });
