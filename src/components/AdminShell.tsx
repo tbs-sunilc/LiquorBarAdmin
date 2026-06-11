@@ -34,6 +34,7 @@ const NAV: ReadonlyArray<NavItem> = [
   { href: '/subscriptions', icon: <IconCard />, label: 'Subscriptions', group: 'platform' },
   { href: '/featured', icon: <IconStar />, label: 'Featured', group: 'platform' },
   { href: '/dry-days', icon: <IconCalendar />, label: 'Dry Days', group: 'platform' },
+  { href: '/master-categories', icon: <IconStar />, label: 'Master Categories', group: 'platform' },
   { href: '/analytics', icon: <IconChart />, label: 'Analytics', group: 'platform' },
   { href: '/settings', icon: <IconGear />, label: 'Admin Settings', group: 'system' },
   { href: '/email-templates', icon: <IconMail />, label: 'Email Templates', group: 'system' },
