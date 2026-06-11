@@ -699,6 +699,7 @@ export const setDryDayActive = (id: number, isActive: boolean) =>
 
 export type BottleCatalogueDto = {
   id: number;
+  categoryId: number;
   brandName: string;
   productName: string;
   category: string;
@@ -712,14 +713,16 @@ export type BottleCatalogueDto = {
 };
 
 export type CatalogueCategoryDto = {
+  id: number;
   name: string;
   itemCount: number;
+  isActive: boolean;
 };
 
 export type CreateBottleCatalogueRequest = {
+  categoryId: number;
   brandName: string;
   productName: string;
-  category: string;
   subCategory?: string | null;
   originCountry?: string | null;
   alcoholContentPct?: number | null;
@@ -814,7 +817,6 @@ export const listAdminBars = (search?: string, skip = 0, take = 100) => {
 
 export type AdminBarInventoryCategoryDto = {
   id: number;
-  barId: number;
   name: string;
   displayOrder: number;
   bottleCount: number;
@@ -831,39 +833,36 @@ export type UpdateAdminBarInventoryCategoryRequest = {
   displayOrder?: number;
 };
 
-export const listAdminBarInventoryCategories = (barId: number) =>
-  request<AdminBarInventoryCategoryDto[]>(`/api/admin/bar-inventory-categories/${barId}`);
+export const listAdminBarInventoryCategories = () =>
+  request<AdminBarInventoryCategoryDto[]>(`/api/admin/bar-inventory-categories`);
 
 export const createAdminBarInventoryCategory = (
-  barId: number,
   payload: CreateAdminBarInventoryCategoryRequest,
 ) =>
-  request<AdminBarInventoryCategoryDto>(`/api/admin/bar-inventory-categories/${barId}`, {
+  request<AdminBarInventoryCategoryDto>(`/api/admin/bar-inventory-categories`, {
     method: 'POST',
     body: JSON.stringify(payload),
   });
 
 export const updateAdminBarInventoryCategory = (
-  barId: number,
   categoryId: number,
   payload: UpdateAdminBarInventoryCategoryRequest,
 ) =>
-  request<AdminBarInventoryCategoryDto>(`/api/admin/bar-inventory-categories/${barId}/${categoryId}`, {
+  request<AdminBarInventoryCategoryDto>(`/api/admin/bar-inventory-categories/${categoryId}`, {
     method: 'PUT',
     body: JSON.stringify(payload),
   });
 
 export const setAdminBarInventoryCategoryActive = (
-  barId: number,
   categoryId: number,
   isActive: boolean,
 ) =>
   request<AdminBarInventoryCategoryDto>(
-    `/api/admin/bar-inventory-categories/${barId}/${categoryId}/active`,
+    `/api/admin/bar-inventory-categories/${categoryId}/active`,
     { method: 'PUT', body: JSON.stringify({ isActive }) },
   );
 
-export const deleteAdminBarInventoryCategory = (barId: number, categoryId: number) =>
-  request<void>(`/api/admin/bar-inventory-categories/${barId}/${categoryId}`, {
+export const deleteAdminBarInventoryCategory = (categoryId: number) =>
+  request<void>(`/api/admin/bar-inventory-categories/${categoryId}`, {
     method: 'DELETE',
   });
