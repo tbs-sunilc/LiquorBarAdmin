@@ -736,14 +736,14 @@ export type UpdateBottleCatalogueRequest = CreateBottleCatalogueRequest & {
 };
 
 export const listBottleCatalogue = (
-  category?: string,
+  categoryId?: number,
   search?: string,
   skip = 0,
   take = 50,
 ) => {
   const q = new URLSearchParams({ skip: String(skip), take: String(take) });
-  if (category) q.set('category', category);
-  if (search)   q.set('search', search);
+  if (categoryId) q.set('category', String(categoryId));
+  if (search) q.set('search', search);
   return request<BottleCatalogueDto[]>(`/api/admin/bottle-catalogue?${q.toString()}`);
 };
 

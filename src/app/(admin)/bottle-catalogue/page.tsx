@@ -35,7 +35,7 @@ export default function BottleCataloguePage() {
   const [showModal, setShowModal] = useState(false);
   const [editing, setEditing] = useState<BottleCatalogueDto | null>(null);
   const [search, setSearch] = useState('');
-  const [filterCategory, setFilterCategory] = useState('');
+ const [filterCategory, setFilterCategory] = useState<number | undefined>(undefined);
   const [form, setForm] = useState<CreateBottleCatalogueRequest>(EMPTY_FORM);
 
   useEffect(() => {
@@ -185,13 +185,12 @@ export default function BottleCataloguePage() {
           />
           <select
             value={filterCategory}
-            onChange={(e) => setFilterCategory(e.target.value)}
-            className="rounded-xl border border-slate-200 px-3 py-2 text-sm bg-white"
+onChange={(e) => setFilterCategory(e.target.value ? Number(e.target.value) : undefined)}            className="rounded-xl border border-slate-200 px-3 py-2 text-sm bg-white"
           >
-            <option value="">All Categories</option>
-            {categoryOptions.map((category) => (
-              <option key={category.id} value={category.name}>{category.name}</option>
-            ))}
+              <option value="">All Categories</option>
+              {categoryOptions.map((category) => (
+                <option key={category.id} value={category.id}>{category.name}</option>
+              ))}
           </select>
         </div>
 

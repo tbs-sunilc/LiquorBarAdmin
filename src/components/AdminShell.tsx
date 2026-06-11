@@ -35,6 +35,7 @@ const NAV: ReadonlyArray<NavItem> = [
   { href: '/featured', icon: <IconStar />, label: 'Featured', group: 'platform' },
   { href: '/dry-days', icon: <IconCalendar />, label: 'Dry Days', group: 'platform' },
   { href: '/master-categories', icon: <IconStar />, label: 'Master Categories', group: 'platform' },
+  { href: '/bottle-catalogue', icon: <IconBottle />, label: 'Bottle Catalogue', group: 'platform' },
   { href: '/analytics', icon: <IconChart />, label: 'Analytics', group: 'platform' },
   { href: '/settings', icon: <IconGear />, label: 'Admin Settings', group: 'system' },
   { href: '/email-templates', icon: <IconMail />, label: 'Email Templates', group: 'system' },
@@ -277,3 +278,4 @@ function IconChart() { return <Base><path d="M4 20V10M10 20V4M16 20v-8M22 20H2" 
 function IconGear() { return <Base><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-1.8-.3 1.6 1.6 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.6 1.6 0 0 0-1-1.5 1.6 1.6 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.6 1.6 0 0 0 .3-1.8 1.6 1.6 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.6 1.6 0 0 0 1.5-1 1.6 1.6 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.6 1.6 0 0 0 1.8.3H9a1.6 1.6 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.6 1.6 0 0 0 1 1.5 1.6 1.6 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.6 1.6 0 0 0-.3 1.8V9a1.6 1.6 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.6 1.6 0 0 0-1.5 1z" /></Base>; }
 function IconMail() { return <Base><rect x="3" y="5" width="18" height="14" rx="2" /><path d="M4 7l8 6 8-6" /></Base>; }
 function IconMenu() { return <Base><path d="M4 6h16M4 12h16M4 18h16" /></Base>; }
+function IconBottle() { return <Base><path d="M10 3h4v3l1 1v2l-1 1v11a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2V10l-1-1V7l1-1V3z" /><path d="M10 12h4" /></Base>; }
