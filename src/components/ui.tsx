@@ -25,7 +25,7 @@ export function PageHeader({
             {eyebrow}
           </p>
         )}
-        <h1 className="font-display text-4xl leading-tight text-ink text-balance">{title}</h1>
+        <h1 className="font-sans-ui text-3xl font-bold leading-tight text-ink text-balance">{title}</h1>
         <span className="gold-rule mt-3 mb-3" aria-hidden="true" />
         {subtitle && <p className="text-sm text-muted text-pretty">{subtitle}</p>}
       </div>
@@ -101,7 +101,7 @@ export function Card({
       {(title || action) && (
         <header className="flex items-center justify-between gap-3 px-5 pt-5 pb-3">
           <div>
-            {title && <h2 className="font-display text-lg text-ink leading-snug">{title}</h2>}
+            {title && <h2 className="font-sans-ui text-lg font-bold text-ink leading-snug">{title}</h2>}
             {subtitle && <p className="text-xs text-muted mt-0.5">{subtitle}</p>}
           </div>
           {action}
@@ -150,7 +150,7 @@ export function EmptyState({
       <div className="w-14 h-14 rounded-full bg-accent-tint flex items-center justify-center text-accent-lo text-2xl mb-4" aria-hidden="true">
         {icon}
       </div>
-      <h3 className="font-display text-xl text-ink">{title}</h3>
+      <h3 className="font-sans-ui text-xl font-bold text-ink">{title}</h3>
       <span className="gold-rule my-3" aria-hidden="true" />
       {description && <p className="text-sm text-muted max-w-sm">{description}</p>}
       {cta && <div className="mt-5">{cta}</div>}

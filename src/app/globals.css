@@ -55,9 +55,9 @@
   --color-info-tint:      #E0E8F2;
 
   /* Typography */
-  --font-display: var(--font-fraunces), 'Fraunces', ui-serif, Georgia, serif;
-  --font-sans:    var(--font-dm-sans), 'DM Sans', system-ui, -apple-system, sans-serif;
-  --font-mono:    'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+  --font-display: "Verdana", Geneva, sans-serif;
+  --font-sans:    "Verdana", Geneva, sans-serif;
+  --font-mono:    "Verdana", Geneva, sans-serif;
 
   --text-xs:     0.75rem;    /* 12px */
   --text-sm:     0.875rem;   /* 14px */

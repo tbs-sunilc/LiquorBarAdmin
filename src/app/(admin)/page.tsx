@@ -44,14 +44,14 @@ export default function AdminHomePage() {
 
   if (loading) return (
     <div className="space-y-8">
-      <PageHeader title="Platform Dashboard" subtitle="Loading platform snapshot…" />
+      <PageHeader title="Dashboard" subtitle="Loading platform snapshot…" />
       <SkeletonCards count={8} />
     </div>
   );
 
   if (error || !data) return (
     <div className="space-y-6">
-      <PageHeader title="Platform Dashboard" />
+      <PageHeader title="Dashboard" />
       <ErrorBanner>{error || 'No data available'}</ErrorBanner>
     </div>
   );
@@ -63,7 +63,7 @@ export default function AdminHomePage() {
       <header className="flex items-center justify-between gap-4">
         <PageHeader
           eyebrow="Real-time operations overview"
-          title="Platform Dashboard"
+          title="Dashboard"
           subtitle={<>Last updated <span className="font-numeric">just now</span></>}
         />
         <div className="flex items-center gap-3">
