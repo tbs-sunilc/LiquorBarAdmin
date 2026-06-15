@@ -10,11 +10,12 @@ import {
   updateBottleCatalogueEntry,
   type BottleCatalogueDto,
   type CatalogueCategoryDto,
-  type CreateBottleCatalogueRequest,
+  type BottleCatalogueUploadRequest,
 } from '@/lib/admin-api';
+import { getDocumentUrl } from '@/lib/document-url';
 import { Card, ErrorBanner, PageHeader } from '@/components/ui';
 
-const EMPTY_FORM: CreateBottleCatalogueRequest = {
+const EMPTY_FORM: BottleCatalogueUploadRequest = {
   categoryId: 0,
   brandName: '',
   productName: '',
@@ -36,7 +37,19 @@ export default function BottleCataloguePage() {
   const [editing, setEditing] = useState<BottleCatalogueDto | null>(null);
   const [search, setSearch] = useState('');
  const [filterCategory, setFilterCategory] = useState<number | undefined>(undefined);
-  const [form, setForm] = useState<CreateBottleCatalogueRequest>(EMPTY_FORM);
+  const [form, setForm] = useState<BottleCatalogueUploadRequest>(EMPTY_FORM);
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!imageFile) {
+      setImagePreviewUrl(null);
+      return;
+    }
+    const url = URL.createObjectURL(imageFile);
+    setImagePreviewUrl(url);
+    return () => URL.revokeObjectURL(url);
+  }, [imageFile]);
 
   useEffect(() => {
     void load();
@@ -62,12 +75,14 @@ export default function BottleCataloguePage() {
   function openCreate() {
     setEditing(null);
     setForm(EMPTY_FORM);
+    setImageFile(null);
     setShowModal(true);
   }
 
   function openEdit(row: BottleCatalogueDto) {
     setEditing(row);
-      setForm({
+    setImageFile(null);
+    setForm({
       categoryId: row.categoryId,
       brandName: row.brandName,
       productName: row.productName,
@@ -82,11 +97,12 @@ export default function BottleCataloguePage() {
   }
 
   async function onSave() {
-    if (busy || !form.brandName.trim() || !form.productName.trim() || !form.categoryId) return;
+    if (busy || !form.brandName.trim() || !form.productName.trim()) return;
     setBusy(true);
     setError(null);
     try {
-      const payload: CreateBottleCatalogueRequest = {
+      const categoryId = form.categoryId || editing?.categoryId || 0;
+      const payload: BottleCatalogueUploadRequest = {
         ...form,
         brandName: form.brandName.trim(),
         productName: form.productName.trim(),
@@ -94,18 +110,38 @@ export default function BottleCataloguePage() {
         originCountry: form.originCountry?.trim() || null,
         imageUrl: form.imageUrl?.trim() || null,
         tastingNotes: form.tastingNotes?.trim() || null,
+        categoryId,
+        imageFile,
       };
 
       if (editing) {
         await updateBottleCatalogueEntry(editing.id, {
           ...payload,
-            isActive: editing.isActive,
-          });
+          isActive: editing.isActive,
+        });
       } else {
         await createBottleCatalogueEntry(payload);
       }
       setShowModal(false);
-      await load();
+      setImageFile(null);
+      if (editing) {
+        setRows((current) =>
+          current.map((row) =>
+            row.id === editing.id
+              ? {
+                  ...row,
+                  ...payload,
+                  id: row.id,
+                  category: row.category,
+                  isActive: editing.isActive,
+                  imageUrl: payload.imageFile ? row.imageUrl : payload.imageUrl ?? row.imageUrl,
+                }
+              : row,
+          ),
+        );
+      } else {
+        await load();
+      }
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'Failed to save bottle catalogue item.');
     } finally {
@@ -118,18 +154,19 @@ export default function BottleCataloguePage() {
     setBusy(true);
     setError(null);
     try {
-      await updateBottleCatalogueEntry(row.id, {
-        brandName: row.brandName,
-        productName: row.productName,
+        await updateBottleCatalogueEntry(row.id, {
+          brandName: row.brandName,
+          productName: row.productName,
         categoryId: row.categoryId,
         subCategory: row.subCategory,
         originCountry: row.originCountry,
         alcoholContentPct: row.alcoholContentPct,
         defaultVolumeMl: row.defaultVolumeMl,
-        imageUrl: row.imageUrl,
-        tastingNotes: row.tastingNotes,
-        isActive: !row.isActive,
-      });
+          imageUrl: row.imageUrl,
+          tastingNotes: row.tastingNotes,
+          isActive: !row.isActive,
+          imageFile: null,
+        });
       await load();
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'Failed to update bottle status.');
@@ -201,6 +238,7 @@ onChange={(e) => setFilterCategory(e.target.value ? Number(e.target.value) : und
             <table className="w-full text-sm">
               <thead>
                 <tr className="text-left text-xs uppercase tracking-wide text-slate-500 border-b border-slate-100">
+                  <th className="py-2 pr-3">Image</th>
                   <th className="py-2 pr-3">Brand</th>
                   <th className="py-2 pr-3">Bottle</th>
                   <th className="py-2 pr-3">Category</th>
@@ -219,6 +257,15 @@ onChange={(e) => setFilterCategory(e.target.value ? Number(e.target.value) : und
                 )}
                 {rows.map((row) => (
                   <tr key={row.id} className="border-b border-slate-50 hover:bg-slate-50/60">
+                    <td className="py-3 pr-3">
+                      <div className="h-12 w-12 overflow-hidden rounded-lg bg-slate-100">
+                        {row.imageUrl ? (
+                          <img src={getDocumentUrl(row.imageUrl)} alt={row.productName} className="h-full w-full object-cover" />
+                        ) : (
+                          <div className="flex h-full w-full items-center justify-center text-[10px] font-black uppercase text-slate-400">No Img</div>
+                        )}
+                      </div>
+                    </td>
                     <td className="py-3 pr-3 font-medium text-slate-800">{row.brandName}</td>
                     <td className="py-3 pr-3 text-slate-600">{row.productName}</td>
                     <td className="py-3 pr-3 text-slate-500">{row.category}</td>
@@ -283,6 +330,29 @@ onChange={(e) => setFilterCategory(e.target.value ? Number(e.target.value) : und
               <Field label="Alcohol Type" value={form.originCountry ?? ''} onChange={(value) => setForm((f) => ({ ...f, originCountry: value }))} />
               <Field label="Alcohol %" type="number" value={form.alcoholContentPct === null ? '' : String(form.alcoholContentPct)} onChange={(value) => setForm((f) => ({ ...f, alcoholContentPct: value === '' ? null : Number(value) }))} />
               <Field label="Image URL" value={form.imageUrl ?? ''} onChange={(value) => setForm((f) => ({ ...f, imageUrl: value }))} />
+              <div className="md:col-span-2 flex flex-col gap-1">
+                <label className="text-xs font-medium text-slate-500 uppercase tracking-wide">Either upload image or paste URL</label>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => setImageFile(e.target.files?.[0] ?? null)}
+                  className="rounded-xl border border-slate-200 px-3 py-2 text-sm bg-white"
+                />
+                {(imagePreviewUrl || form.imageUrl) && (
+                  <div className="mt-2 flex items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 p-3">
+                    <div className="h-16 w-16 overflow-hidden rounded-lg bg-white">
+                      <img
+                        src={imagePreviewUrl ?? getDocumentUrl(form.imageUrl) ?? undefined}
+                        alt="Bottle preview"
+                        className="h-full w-full object-cover"
+                      />
+                    </div>
+                    <p className="text-xs text-slate-500">
+                      {imagePreviewUrl ? 'New file selected. Save to upload.' : 'Current image URL will be used.'}
+                    </p>
+                  </div>
+                )}
+              </div>
               <div className="md:col-span-2 flex flex-col gap-1">
                 <label className="text-xs font-medium text-slate-500 uppercase tracking-wide">Tasting Notes</label>
                 <textarea

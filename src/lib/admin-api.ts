@@ -26,7 +26,9 @@ async function request<T>(path: string, init: RequestInit = {}, anon = false): P
     return mockRequest<T>(path, init);
   }
   const headers = new Headers(init.headers);
-  if (!headers.has('Content-Type') && init.body) headers.set('Content-Type', 'application/json');
+  if (!headers.has('Content-Type') && init.body && !(init.body instanceof FormData)) {
+    headers.set('Content-Type', 'application/json');
+  }
   if (!anon && typeof window !== 'undefined') {
     const token = window.sessionStorage.getItem(TOKEN_KEY);
     if (token) headers.set('Authorization', `Bearer ${token}`);
@@ -735,6 +737,30 @@ export type UpdateBottleCatalogueRequest = CreateBottleCatalogueRequest & {
   isActive: boolean;
 };
 
+export type BottleCatalogueUploadRequest = CreateBottleCatalogueRequest & {
+  imageFile?: File | null;
+};
+
+function buildBottleCatalogueFormData(
+  payload: BottleCatalogueUploadRequest | (UpdateBottleCatalogueRequest & { imageFile?: File | null }),
+) {
+  const formData = new FormData();
+  formData.append('categoryId', String(payload.categoryId));
+  formData.append('brandName', payload.brandName);
+  formData.append('productName', payload.productName);
+  formData.append('subCategory', payload.subCategory ?? '');
+  formData.append('originCountry', payload.originCountry ?? '');
+  formData.append('alcoholContentPct', payload.alcoholContentPct === null || payload.alcoholContentPct === undefined ? '' : String(payload.alcoholContentPct));
+  formData.append('defaultVolumeMl', String(payload.defaultVolumeMl));
+  formData.append('imageUrl', payload.imageUrl ?? '');
+  formData.append('tastingNotes', payload.tastingNotes ?? '');
+  if ('isActive' in payload) {
+    formData.append('isActive', String(payload.isActive));
+  }
+  if (payload.imageFile) formData.append('imageFile', payload.imageFile);
+  return formData;
+}
+
 export const listBottleCatalogue = (
   categoryId?: number,
   search?: string,
@@ -750,19 +776,19 @@ export const listBottleCatalogue = (
 export const listCatalogueCategories = () =>
   request<CatalogueCategoryDto[]>('/api/admin/bottle-catalogue/categories');
 
-export const createBottleCatalogueEntry = (payload: CreateBottleCatalogueRequest) =>
+export const createBottleCatalogueEntry = (payload: BottleCatalogueUploadRequest) =>
   request<BottleCatalogueDto>('/api/admin/bottle-catalogue', {
     method: 'POST',
-    body: JSON.stringify(payload),
+    body: buildBottleCatalogueFormData(payload),
   });
 
 export const updateBottleCatalogueEntry = (
   id: number,
-  payload: UpdateBottleCatalogueRequest,
+  payload: UpdateBottleCatalogueRequest & { imageFile?: File | null },
 ) =>
   request<BottleCatalogueDto>(`/api/admin/bottle-catalogue/${id}`, {
     method: 'PUT',
-    body: JSON.stringify(payload),
+    body: buildBottleCatalogueFormData(payload),
   });
 
 export const deleteBottleCatalogueEntry = (id: number) =>
