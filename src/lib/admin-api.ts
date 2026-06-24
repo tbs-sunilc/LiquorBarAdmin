@@ -26,7 +26,9 @@ async function request<T>(path: string, init: RequestInit = {}, anon = false): P
     return mockRequest<T>(path, init);
   }
   const headers = new Headers(init.headers);
-  if (!headers.has('Content-Type') && init.body) headers.set('Content-Type', 'application/json');
+  if (!headers.has('Content-Type') && init.body && !(init.body instanceof FormData)) {
+    headers.set('Content-Type', 'application/json');
+  }
   if (!anon && typeof window !== 'undefined') {
     const token = window.sessionStorage.getItem(TOKEN_KEY);
     if (token) headers.set('Authorization', `Bearer ${token}`);
@@ -699,6 +701,7 @@ export const setDryDayActive = (id: number, isActive: boolean) =>
 
 export type BottleCatalogueDto = {
   id: number;
+  categoryId: number;
   brandName: string;
   productName: string;
   category: string;
@@ -712,14 +715,16 @@ export type BottleCatalogueDto = {
 };
 
 export type CatalogueCategoryDto = {
+  id: number;
   name: string;
   itemCount: number;
+  isActive: boolean;
 };
 
 export type CreateBottleCatalogueRequest = {
+  categoryId: number;
   brandName: string;
   productName: string;
-  category: string;
   subCategory?: string | null;
   originCountry?: string | null;
   alcoholContentPct?: number | null;
@@ -732,34 +737,58 @@ export type UpdateBottleCatalogueRequest = CreateBottleCatalogueRequest & {
   isActive: boolean;
 };
 
+export type BottleCatalogueUploadRequest = CreateBottleCatalogueRequest & {
+  imageFile?: File | null;
+};
+
+function buildBottleCatalogueFormData(
+  payload: BottleCatalogueUploadRequest | (UpdateBottleCatalogueRequest & { imageFile?: File | null }),
+) {
+  const formData = new FormData();
+  formData.append('categoryId', String(payload.categoryId));
+  formData.append('brandName', payload.brandName);
+  formData.append('productName', payload.productName);
+  formData.append('subCategory', payload.subCategory ?? '');
+  formData.append('originCountry', payload.originCountry ?? '');
+  formData.append('alcoholContentPct', payload.alcoholContentPct === null || payload.alcoholContentPct === undefined ? '' : String(payload.alcoholContentPct));
+  formData.append('defaultVolumeMl', String(payload.defaultVolumeMl));
+  formData.append('imageUrl', payload.imageUrl ?? '');
+  formData.append('tastingNotes', payload.tastingNotes ?? '');
+  if ('isActive' in payload) {
+    formData.append('isActive', String(payload.isActive));
+  }
+  if (payload.imageFile) formData.append('imageFile', payload.imageFile);
+  return formData;
+}
+
 export const listBottleCatalogue = (
-  category?: string,
+  categoryId?: number,
   search?: string,
   skip = 0,
   take = 50,
 ) => {
   const q = new URLSearchParams({ skip: String(skip), take: String(take) });
-  if (category) q.set('category', category);
-  if (search)   q.set('search', search);
+  if (categoryId) q.set('category', String(categoryId));
+  if (search) q.set('search', search);
   return request<BottleCatalogueDto[]>(`/api/admin/bottle-catalogue?${q.toString()}`);
 };
 
 export const listCatalogueCategories = () =>
   request<CatalogueCategoryDto[]>('/api/admin/bottle-catalogue/categories');
 
-export const createBottleCatalogueEntry = (payload: CreateBottleCatalogueRequest) =>
+export const createBottleCatalogueEntry = (payload: BottleCatalogueUploadRequest) =>
   request<BottleCatalogueDto>('/api/admin/bottle-catalogue', {
     method: 'POST',
-    body: JSON.stringify(payload),
+    body: buildBottleCatalogueFormData(payload),
   });
 
 export const updateBottleCatalogueEntry = (
   id: number,
-  payload: UpdateBottleCatalogueRequest,
+  payload: UpdateBottleCatalogueRequest & { imageFile?: File | null },
 ) =>
   request<BottleCatalogueDto>(`/api/admin/bottle-catalogue/${id}`, {
     method: 'PUT',
-    body: JSON.stringify(payload),
+    body: buildBottleCatalogueFormData(payload),
   });
 
 export const deleteBottleCatalogueEntry = (id: number) =>
@@ -814,7 +843,6 @@ export const listAdminBars = (search?: string, skip = 0, take = 100) => {
 
 export type AdminBarInventoryCategoryDto = {
   id: number;
-  barId: number;
   name: string;
   displayOrder: number;
   bottleCount: number;
@@ -831,39 +859,36 @@ export type UpdateAdminBarInventoryCategoryRequest = {
   displayOrder?: number;
 };
 
-export const listAdminBarInventoryCategories = (barId: number) =>
-  request<AdminBarInventoryCategoryDto[]>(`/api/admin/bar-inventory-categories/${barId}`);
+export const listAdminBarInventoryCategories = () =>
+  request<AdminBarInventoryCategoryDto[]>(`/api/admin/bar-inventory-categories`);
 
 export const createAdminBarInventoryCategory = (
-  barId: number,
   payload: CreateAdminBarInventoryCategoryRequest,
 ) =>
-  request<AdminBarInventoryCategoryDto>(`/api/admin/bar-inventory-categories/${barId}`, {
+  request<AdminBarInventoryCategoryDto>(`/api/admin/bar-inventory-categories`, {
     method: 'POST',
     body: JSON.stringify(payload),
   });
 
 export const updateAdminBarInventoryCategory = (
-  barId: number,
   categoryId: number,
   payload: UpdateAdminBarInventoryCategoryRequest,
 ) =>
-  request<AdminBarInventoryCategoryDto>(`/api/admin/bar-inventory-categories/${barId}/${categoryId}`, {
+  request<AdminBarInventoryCategoryDto>(`/api/admin/bar-inventory-categories/${categoryId}`, {
     method: 'PUT',
     body: JSON.stringify(payload),
   });
 
 export const setAdminBarInventoryCategoryActive = (
-  barId: number,
   categoryId: number,
   isActive: boolean,
 ) =>
   request<AdminBarInventoryCategoryDto>(
-    `/api/admin/bar-inventory-categories/${barId}/${categoryId}/active`,
+    `/api/admin/bar-inventory-categories/${categoryId}/active`,
     { method: 'PUT', body: JSON.stringify({ isActive }) },
   );
 
-export const deleteAdminBarInventoryCategory = (barId: number, categoryId: number) =>
-  request<void>(`/api/admin/bar-inventory-categories/${barId}/${categoryId}`, {
+export const deleteAdminBarInventoryCategory = (categoryId: number) =>
+  request<void>(`/api/admin/bar-inventory-categories/${categoryId}`, {
     method: 'DELETE',
   });

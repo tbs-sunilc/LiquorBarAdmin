@@ -1,4 +1,4 @@
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:5000';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://192.168.1.231:5000';
 const LOCAL_KEY_PREFIX = 'local://';
 const USER_DOCUMENTS_PREFIX = 'User Documents/';
 
